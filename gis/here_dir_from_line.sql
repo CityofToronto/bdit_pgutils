@@ -16,7 +16,7 @@ BEGIN
 			USING HINT = 'Input geometry must be a Line';
 	END IF;
 	
-	_azimuth := degrees(ST_Azimuth(ST_StartPoint(ST_LineMerge(line)), ST_EndPoint(ST_LineMerge(line)))) >= 90;
+	_azimuth := degrees(ST_Azimuth(ST_StartPoint(ST_LineMerge(line)), ST_EndPoint(ST_LineMerge(line))))::numeric;
 	
 	RETURN CASE WHEN _azimuth < 90 THEN 'F'
 				WHEN _azimuth >= 90 AND _azimuth < 270 THEN 'T'
