@@ -19,7 +19,7 @@ BEGIN
 	_azimuth := degrees(ST_Azimuth(ST_StartPoint(ST_LineMerge(line)), ST_EndPoint(ST_LineMerge(line)))) >= 90;
 	
 	RETURN CASE WHEN _azimuth < 90 THEN 'F'
-				WHEN _azimuth >= 90 AND _azimuth < 180 THEN 'T'
+				WHEN _azimuth >= 90 AND _azimuth < 270 THEN 'T'
 				ELSE 'F'
 																						 
 	END;
