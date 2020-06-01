@@ -13,8 +13,6 @@ $BODY$
 
 DECLARE
     srid int;
-    joined_clusters int[];
-
 BEGIN
 
 --If there's only 1 geom, don't bother with the loop.
@@ -25,11 +23,13 @@ END IF;
 
 CREATE TEMPORARY TABLE IF NOT EXISTS geometries (LIKE gis.gid_geom) ON COMMIT DROP;
 
-BEGIN
-    ALTER TABLE geometries ADD COLUMN cluster_id serial;
-EXCEPTION
-    WHEN duplicate_column THEN --do nothing. Exception comes up when using this function multiple times
-END;
+
+CREATE TEMPORARY TABLE clusters(
+    geom_group geometry,
+    ids TEXT[],
+    cluster_id serial
+    ) ON COMMIT DROP;
+
 
 TRUNCATE geometries;
     --inserting geoms in
@@ -41,46 +41,68 @@ srid := ST_SRID(the_geom) FROM geometries LIMIT 1;
 
 UPDATE geometries --transforming geoms to a UTM coordinate system so distances will be calculated in meters.
 SET the_geom =  ST_TRANSFORM(the_geom,2952);
+INSERT INTO clusters(geom_group, ids)
+    (SELECT ST_COLLECT(the_geom), ARRAY_AGG(gid)
+        FROM geometries GROUP BY the_geom --Groups together points which are at the same location
+    );
 
---Adding spatial index
-CREATE INDEX geoms_index
-ON geometries
+CREATE INDEX geom_index
+ON clusters
 USING gist
-(the_geom);
+(geom_group);
 
-ANALYZE geometries;
+Analyze clusters;
 
 LOOP
-    --If the smallest maximum distance between two clusters is greater than 2x the desired cluster radius, then there are no more clusters to be formed
-    IF (SELECT ST_MaxDistance(ST_Collect(a.the_geom),ST_Collect(b.the_geom))  FROM geometries a, geometries b
-        WHERE a.cluster_id <> b.cluster_id
-        GROUP BY a.cluster_id, b.cluster_id 
-        ORDER BY ST_MaxDistance(ST_Collect(a.the_geom),ST_Collect(b.the_geom)) LIMIT 1)
-        > 2 * _radius
+    --If the shortest maximum distance between two clusters is greater than 2x the specified radius, then end the clustering algorithm.
+    IF (SELECT ST_MaxDistance(a.geom_group,b.geom_group)  FROM clusters a, clusters b
+        WHERE 
+        ST_DFullyWithin(a.geom_group,b.geom_group, 2 * _radius)
+        AND a.cluster_id < b.cluster_id AND a.cluster_id > 0 AND b.cluster_id > 0
+        ORDER BY ST_MaxDistance(a.geom_group,b.geom_group) LIMIT 1)
+        IS NULl
     THEN
         EXIT;
     END IF;
 
-    joined_clusters := ARRAY[a.cluster_id,b.cluster_id]
-        FROM geometries a, geometries b
-        WHERE a.cluster_id <> b.cluster_id
-        GROUP BY a.cluster_id, b.cluster_id
-        ORDER BY ST_MaxDistance(ST_Collect(a.the_geom),ST_Collect(b.the_geom)) 
-        LIMIT 1;
+    --Periodically reindex the clusters table
+    ANALYZE clusters;
 
-    UPDATE geometries
-    SET cluster_id = joined_clusters[1]
-    WHERE cluster_id = joined_clusters[2];
+    WITH finding_nearest_clusters AS(
+    SELECT DISTINCT ON (a.cluster_id) a.cluster_id, ST_collect(a.geom_group,b.geom_group) AS geom_group, ARRAY[a.cluster_id,b.cluster_id] as joined_clusters, a.ids||b.ids AS ids
+    FROM clusters a, clusters b
+        WHERE ST_DFullyWithin(a.geom_group,b.geom_group, 2 * _radius)
+            AND a.cluster_id < b.cluster_id AND a.cluster_id > 0 AND b.cluster_id > 0
+        ORDER BY a.cluster_id, ST_MaxDistance(a.geom_group,b.geom_group)
+    )
+    --If a cluster is linked to multiple nearest clusters, select only the shortest distance pairing, and flag the others.
+    , unique_clusters AS(
+    SELECT a.*, CASE WHEN ST_AREA(ST_MinimumBoundingCircle(a.geom_group))>= ST_AREA(ST_MinimumBoundingCircle(b.geom_group)) THEN 1 ELSE 0 END as repeat_flag 
+    FROM finding_nearest_clusters a
+    LEFT OUTER JOIN finding_nearest_clusters b ON a.cluster_id <> b.cluster_id AND a.joined_clusters && b.joined_clusters 
+    )       
+        --Update the set of clusters with the new clusters
+    UPDATE clusters o SET 
+        --Set to 0 the cluster_id of the cluster which will contain 0 data.
+        cluster_id = CASE WHEN o.cluster_id = joined_clusters[2] THEN 0 ELSE joined_clusters[1] END
+        ,geom_group = CASE WHEN o.cluster_id = joined_clusters[2] THEN NULL ELSE f.geom_group END
+        ,ids = CASE WHEN o.cluster_id = joined_clusters[2] THEN NULL ELSE f.ids END
+        FROM (SELECT DISTINCT ON (cluster_id) cluster_id, geom_group, joined_clusters, ids, repeat_flag
+            FROM unique_clusters 
+            ORDER BY cluster_id, repeat_flag DESC
+            ) f
+        WHERE o.cluster_id = ANY (joined_clusters) AND repeat_flag =0;
 
-    --If there's only 1 cluster left, exit loop
-    IF (SELECT COUNT(DISTINCT cluster_id) FROM geometries) < 2 THEN
-        EXIT;
-
+    IF (SELECT COUNT(DISTINCT cluster_id) FROM clusters) < 2    THEN
+        EXIT;                           
     END IF;
 
 END LOOP;
 
-RETURN QUERY SELECT gid, ST_TRANSFORM(the_geom, srid)::geometry(geom), cluster_id FROM geometries;
+RETURN QUERY 
+    SELECT gid::TEXT, ST_TRANSFORM(the_geom, srid), cluster_id 
+    FROM geometries
+    inner join (select cluster_id, unnest(ids) AS gid FROM clusters)c USING (gid);
 END;
 $BODY$
 LANGUAGE plpgsql;
