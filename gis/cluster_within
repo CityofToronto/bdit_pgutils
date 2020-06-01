@@ -1,0 +1,99 @@
+CREATE TYPE gis.gid_geom AS (
+    gid TEXT,
+    the_geom geometry);
+    
+CREATE TYPE gis.clustered_geom AS (
+    gid TEXT,
+    the_geom geometry,
+    cluster_id int);
+	
+CREATE OR REPLACE FUNCTION gis.cluster_within(_geoms gis.gid_geom[], _radius integer)
+RETURNS SETOF gis.clustered_geom AS
+$BODY$
+
+DECLARE
+    srid int;
+    joined_clusters int[];
+
+BEGIN
+
+--If there's only 1 geom, don't bother with the loop.
+IF array_length(_geoms,1)<2 THEN
+    RETURN QUERY SELECT gid, the_geom, 1 FROM unnest(_geoms);
+    RETURN;
+END IF;
+
+CREATE TEMPORARY TABLE IF NOT EXISTS geoms2 (LIKE gis.gid_geom) ON COMMIT DROP;
+
+BEGIN
+    ALTER TABLE geoms2 ADD COLUMN cluster_id serial;
+EXCEPTION
+    WHEN duplicate_column THEN --do nothing. Exception comes up when using this function multiple times
+END;
+
+TRUNCATE geoms2;
+    --inserting geoms in
+INSERT INTO geoms2(gid, the_geom)
+    (SELECT (unnest(geoms)).* ); 
+
+--Store the srid to reconvert geoms after, assumes all geoms have the same SRID
+srid := ST_SRID(the_geom) FROM geoms2 LIMIT 1;
+
+UPDATE geoms2 --transforming geoms to a UTM coordinate system so distances will be calculated in meters.
+SET the_geom =  ST_TRANSFORM(the_geom,2952);
+
+--Adding spatial index
+CREATE INDEX geoms_index
+ON geoms2
+USING gist
+(the_geom);
+
+ANALYZE geoms2;
+
+LOOP
+    --If the smallest maximum distance between two clusters is greater than 2x the desired cluster radius, then there are no more clusters to be formed
+    IF (SELECT ST_MaxDistance(ST_Collect(a.the_geom),ST_Collect(b.the_geom))  FROM geoms2 a, geoms2 b
+        WHERE a.cluster_id <> b.cluster_id
+        GROUP BY a.cluster_id, b.cluster_id 
+        ORDER BY ST_MaxDistance(ST_Collect(a.the_geom),ST_Collect(b.the_geom)) LIMIT 1)
+        > 2 * _radius
+    THEN
+        EXIT;
+    END IF;
+
+    joined_clusters := ARRAY[a.cluster_id,b.cluster_id]
+        FROM geoms2 a, geoms2 b
+        WHERE a.cluster_id <> b.cluster_id
+        GROUP BY a.cluster_id, b.cluster_id
+        ORDER BY ST_MaxDistance(ST_Collect(a.the_geom),ST_Collect(b.the_geom)) 
+        LIMIT 1;
+
+    UPDATE geoms2
+    SET cluster_id = joined_clusters[1]
+    WHERE cluster_id = joined_clusters[2];
+
+    --If there's only 1 cluster left, exit loop
+    IF (SELECT COUNT(DISTINCT cluster_id) FROM geoms2) < 2 THEN
+        EXIT;
+
+    END IF;
+
+END LOOP;
+
+RETURN QUERY SELECT gid, ST_TRANSFORM(the_geom, srid)::geometry(geom), cluster_id FROM geoms2;
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+
+GRANT EXECUTE ON FUNCTION gis.cluster_within(gis.gid_geom[],  integer) TO bdit_humans;
+COMMENT ON FUNCTION gis.cluster_within(gis.gid_geom[],  integer) IS 
+$$Bottom up hierarchical clustering function that clusters geometries based on a maximum distance of _radius.
+usage:
+WITH subq AS(
+    SELECT ARRAY_AGG((gid, the_geom)::pt) AS points
+    FROM data
+    GROUP BY collection_id)
+SELECT (clusters).* FROM 
+    (SELECT buc(points, radius) AS clusters FROM subq
+) y;$$;
