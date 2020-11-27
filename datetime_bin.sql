@@ -12,5 +12,5 @@ AS $BODY$
 
 $BODY$;
 
-ALTER FUNCTION public.datetime_bin(timestamp without time zone)
+ALTER FUNCTION public.datetime_bin(timestamp without time zone, integer)
     OWNER TO rdumas;
