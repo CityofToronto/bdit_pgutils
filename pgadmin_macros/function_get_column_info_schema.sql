@@ -1,5 +1,11 @@
---for testing: 
---rescu
+/*
+Function to return column names for every table in a schema.
+Copy results to VS Code to take advantage of search/highlighting.
+
+Usage: Set PGadmin Macro SQL to: 
+--$SELECTION$ = schema_name (eg. rescu)
+SELECT * FROM public.get_column_info_schema('$SELECTION$');
+*/
 
 DROP FUNCTION public.get_column_info_schema(text);
 CREATE OR REPLACE FUNCTION public.get_column_info_schema(IN sch_name text) --$SELECTION$ = schema_name

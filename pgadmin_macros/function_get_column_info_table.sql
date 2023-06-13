@@ -1,5 +1,12 @@
---for testing: 
---rescu.volumes_15min
+/*
+Function to return column names for a single table in a variety of formats
+including as a properlly fluffed SELECT statement with an automatically
+generated alias (first letter of each word in table name ('_' as delimeter))
+
+Usage: Set PGadmin Macro SQL to:
+--$SELECTION$ = schema_name.table_name (eg. rescu.volumes_15min)
+SELECT * FROM public.get_column_info_table('$SELECTION$');
+*/
 
 DROP FUNCTION public.get_column_info_table(text);
 CREATE OR REPLACE FUNCTION public.get_column_info_table(IN sch_table_name text) --$SELECTION$ = schema_name.table_name
