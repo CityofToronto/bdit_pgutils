@@ -1,8 +1,8 @@
 --for testing: 
 --rescu.volumes_15min
 
-DROP FUNCTION get_column_info_table(text);
-CREATE OR REPLACE FUNCTION get_column_info_table(IN sch_table_name text) --$SELECTION$ = schema_name.table_name
+DROP FUNCTION public.get_column_info_table(text);
+CREATE OR REPLACE FUNCTION public.get_column_info_table(IN sch_table_name text) --$SELECTION$ = schema_name.table_name
 
 RETURNS TABLE (
     columns_new_line TEXT,

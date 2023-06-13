@@ -1,8 +1,8 @@
 --for testing: 
 --rescu.volumes_15min
 
-DROP FUNCTION get_row_count(text);
-CREATE OR REPLACE FUNCTION get_row_count(IN schema_table text)
+DROP FUNCTION public.get_row_count(text);
+CREATE OR REPLACE FUNCTION public.get_row_count(IN schema_table text)
 RETURNS TEXT AS
 $$
 DECLARE

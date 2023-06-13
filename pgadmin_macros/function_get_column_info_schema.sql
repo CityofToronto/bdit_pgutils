@@ -1,8 +1,8 @@
 --for testing: 
 --rescu
 
-DROP FUNCTION get_column_info_schema(text);
-CREATE OR REPLACE FUNCTION get_column_info_schema(IN sch_name text) --$SELECTION$ = schema_name
+DROP FUNCTION public.get_column_info_schema(text);
+CREATE OR REPLACE FUNCTION public.get_column_info_schema(IN sch_name text) --$SELECTION$ = schema_name
 
 RETURNS TABLE (
     columns_new_line TEXT,
