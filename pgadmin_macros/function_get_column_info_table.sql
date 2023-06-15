@@ -50,12 +50,12 @@ SELECT
         concat(p.table_alias || '.', c.column_name), 
         ',' || chr(10)
         ORDER BY ordinal_position
-    ) || chr(10) || 'FROM ' || c.table_name || ' AS ' || p.table_alias  AS columns_new_line,
+    ) || chr(10) || 'FROM ' || c.table_schema || '.' || c.table_name || ' AS ' || p.table_alias  AS columns_new_line,
     'SELECT ' || string_agg(
         concat(p.table_alias || '.', c.column_name), 
         ','
         ORDER BY ordinal_position
-    ) || chr(10) || 'FROM ' || c.table_name || ' AS ' || p.table_alias  AS columns_no_new_line,
+    ) || chr(10) || 'FROM ' || c.table_schema || '.' || c.table_name || ' AS ' || p.table_alias  AS columns_no_new_line,
     string_agg(
         c.column_name, 
         ', '
