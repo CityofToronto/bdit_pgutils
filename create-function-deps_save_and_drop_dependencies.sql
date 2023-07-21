@@ -148,6 +148,16 @@ ELSIF v_curr.obj_type = 'm' THEN
     WHERE
         schemaname = v_curr.obj_schema
         AND matviewname = v_curr.obj_name
+    UNION
+    --save index/unique index: 
+    SELECT
+        p_view_schema,
+        p_view_name,
+        indexdef AS deps_ddl_to_run
+    FROM pg_indexes
+    WHERE
+        schemaname = v_curr.obj_schema
+        AND tablename = v_curr.obj_name
     UNION    
     --save mat view owner: 
     SELECT
@@ -158,17 +168,7 @@ ELSIF v_curr.obj_type = 'm' THEN
     FROM pg_matviews
     WHERE
         schemaname = v_curr.obj_schema
-        AND matviewname = v_curr.obj_name
-    UNION
-    --save index/unique index: 
-    SELECT
-        p_view_schema,
-        p_view_name,
-        indexdef AS deps_ddl_to_run
-    FROM pg_indexes
-    WHERE
-        schemaname = v_curr.obj_schema
-        AND tablename = v_curr.obj_name;
+        AND matviewname = v_curr.obj_name;
 
 END IF;
 
