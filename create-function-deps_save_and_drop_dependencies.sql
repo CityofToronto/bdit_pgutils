@@ -1,3 +1,11 @@
+CREATE OR REPLACE FUNCTION public.deps_save_and_drop_dependencies(p_view_schema IN VARCHAR, p_view_name IN VARCHAR)
+RETURNS NULL
+LANGUAGE plpgsql
+    VOLATILE
+    PARALLEL UNSAFE
+    COST 100
+AS
+$$
 DECLARE v_curr record;
 
 BEGIN
@@ -140,3 +148,6 @@ EXECUTE 'DROP ' ||
 END loop;
 
 END;
+$$;
+
+ALTER FUNCTION public.deps_save_and_drop_dependencies OWNER TO natalie;
