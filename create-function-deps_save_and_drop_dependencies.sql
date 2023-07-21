@@ -111,28 +111,50 @@ WHERE
     table_schema = v_curr.obj_schema
     AND table_name = v_curr.obj_name;
 
---save create statements
 IF v_curr.obj_type = 'v' THEN
     INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    --save view create statements
     SELECT
         p_view_schema,
         p_view_name,
         'CREATE VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name || ' AS '
         || definition AS deps_ddl_to_run
-    FROM information_schema.views
+    FROM pg_views
     WHERE
-        table_schema = v_curr.obj_schema
-        AND table_name = v_curr.obj_name;
+        schemaname = v_curr.obj_schema
+        AND viewname = v_curr.obj_name
+    UNION
+    --save view owners 
+    SELECT
+        p_view_schema,
+        p_view_name,
+        'ALTER VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name || ' OWNER TO '
+        || viewowner AS deps_ddl_to_run
+    FROM pg_views
+    WHERE
+        schemaname = v_curr.obj_schema
+        AND viewname = v_curr.obj_name;
 
 ELSIF v_curr.obj_type = 'm' THEN
 
-    --save mat view definition
     INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    --save mat view definition
     SELECT
         p_view_schema,
         p_view_name,
         'CREATE MATERIALIZED VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name
         || ' AS ' || definition AS deps_ddl_to_run
+    FROM pg_matviews
+    WHERE
+        schemaname = v_curr.obj_schema
+        AND matviewname = v_curr.obj_name
+    UNION    
+    --save mat view owner: 
+    SELECT
+        p_view_schema,
+        p_view_name,
+        'ALTER MATERIALIZED VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name
+        || ' OWNER TO ' || matviewowner AS deps_ddl_to_run
     FROM pg_matviews
     WHERE
         schemaname = v_curr.obj_schema
