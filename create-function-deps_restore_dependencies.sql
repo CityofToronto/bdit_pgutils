@@ -28,4 +28,4 @@ WHERE
 END;
 $$;
 
-ALTER FUNCTION public.deps_save_and_drop_dependencies OWNER TO natalie;
+ALTER FUNCTION public.deps_restore_dependencies OWNER TO natalie;
