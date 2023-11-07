@@ -122,9 +122,10 @@ IF v_curr.obj_type = 'v' THEN
     FROM pg_views
     WHERE
         schemaname = v_curr.obj_schema
-        AND viewname = v_curr.obj_name
-    UNION
+        AND viewname = v_curr.obj_name;
+
     --save view owners 
+    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     SELECT
         p_view_schema,
         p_view_name,
@@ -147,9 +148,10 @@ ELSIF v_curr.obj_type = 'm' THEN
     FROM pg_matviews
     WHERE
         schemaname = v_curr.obj_schema
-        AND matviewname = v_curr.obj_name
-    UNION
+        AND matviewname = v_curr.obj_name;
+    
     --save index/unique index: 
+    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     SELECT
         p_view_schema,
         p_view_name,
@@ -157,9 +159,10 @@ ELSIF v_curr.obj_type = 'm' THEN
     FROM pg_indexes
     WHERE
         schemaname = v_curr.obj_schema
-        AND tablename = v_curr.obj_name
-    UNION    
+        AND tablename = v_curr.obj_name;
+
     --save mat view owner: 
+    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     SELECT
         p_view_schema,
         p_view_name,
