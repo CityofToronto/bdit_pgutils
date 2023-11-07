@@ -1,5 +1,5 @@
-CREATE OR REPLACE FUNCTION public.deps_save_and_drop_dependencies(p_view_schema IN VARCHAR, p_view_name IN VARCHAR)
-RETURNS NULL
+CREATE OR REPLACE FUNCTION public.deps_save_and_drop_dependencies(p_view_schema IN VARCHAR, p_view_name IN VARCHAR, dryrun BOOLEAN default False)
+RETURNS VOID
 LANGUAGE plpgsql
     VOLATILE
     PARALLEL UNSAFE
@@ -79,7 +79,7 @@ IF v_curr.obj_type = 'v' THEN
         p_view_schema,
         p_view_name,
         'ALTER VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name || ' OWNER TO '
-        || viewowner AS deps_ddl_to_run
+        || viewowner || ';' AS deps_ddl_to_run
     FROM pg_views
     WHERE
         schemaname = v_curr.obj_schema
@@ -104,7 +104,7 @@ ELSIF v_curr.obj_type = 'm' THEN
     SELECT
         p_view_schema,
         p_view_name,
-        indexdef AS deps_ddl_to_run
+        indexdef || ';' AS deps_ddl_to_run
     FROM pg_indexes
     WHERE
         schemaname = v_curr.obj_schema
@@ -116,7 +116,7 @@ ELSIF v_curr.obj_type = 'm' THEN
         p_view_schema,
         p_view_name,
         'ALTER MATERIALIZED VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name
-        || ' OWNER TO ' || matviewowner AS deps_ddl_to_run
+        || ' OWNER TO ' || matviewowner || ';' AS deps_ddl_to_run
     FROM pg_matviews
     WHERE
         schemaname = v_curr.obj_schema
@@ -169,17 +169,19 @@ SELECT
     p_view_schema,
     p_view_name,
     'GRANT ' || privilege_type || ' ON ' || table_schema || '.'
-    || table_name || ' TO ' || grantee AS deps_ddl_to_run
+    || table_name || ' TO ' || grantee || ';' AS deps_ddl_to_run
 FROM information_schema.role_table_grants
 WHERE
     table_schema = v_curr.obj_schema
     AND table_name = v_curr.obj_name;
 
-EXECUTE 'DROP ' ||
-  CASE
-    WHEN v_curr.obj_type = 'v' THEN 'VIEW'
-    WHEN v_curr.obj_type = 'm' THEN 'MATERIALIZED VIEW'
-  END || ' ' || v_curr.obj_schema || '.' || v_curr.obj_name;
+IF dryrun IS FALSE THEN
+    EXECUTE 'DROP ' ||
+    CASE
+        WHEN v_curr.obj_type = 'v' THEN 'VIEW'
+        WHEN v_curr.obj_type = 'm' THEN 'MATERIALIZED VIEW'
+    END || ' ' || v_curr.obj_schema || '.' || v_curr.obj_name || ';';
+END IF;
 
 END loop;
 
@@ -187,3 +189,24 @@ END;
 $$;
 
 ALTER FUNCTION public.deps_save_and_drop_dependencies OWNER TO natalie;
+
+COMMENT ON FUNCTION public.deps_save_and_drop_dependencies(VARCHAR, VARCHAR, BOOLEAN) IS 
+    '''Use this function when you need to drop+edit+recreate a table or (mat) view with dependencies.
+    This function will recursively iterate through an objects dependencies and save:
+    - definition of view/mat view
+    - object owner
+    - index/unique index (only applies to mat views)
+    - object comments
+    - column comments
+    - any permissions
+    - DROP the dependency
+    Then, after dropping, editing, and restoring the original object, use the function 
+    public.deps_restore_dependencies(VARCHAR, VARCHAR) to recreate the dependencies. 
+    You can also use `dryrun = True` to not drop the dependencies, if you want to check
+    the entries in `public.deps_saved_ddl` first. In that case you will have to delete the records.
+    
+    Example with dryrun = True;
+    SELECT public.deps_save_and_drop_dependencies(''miovision_api''::text COLLATE pg_catalog."C", ''volumes_15min''::text COLLATE pg_catalog."C", TRUE);
+    SELECT * FROM public.deps_saved_ddl WHERE deps_view_schema = ''miovision_api'' AND deps_view_name = ''volumes_15min'' ORDER BY deps_id;
+    DELETE FROM public.deps_saved_ddl WHERE deps_view_schema = ''miovision_api'' AND deps_view_name = ''volumes_15min'';
+    '''
