@@ -60,57 +60,6 @@ FOR v_curr IN
     ORDER BY max(depth) DESC
 ) loop
 
---save comments on dependencies
-INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
-SELECT
-    p_view_schema,
-    p_view_name,
-    'COMMENT ON ' ||
-    CASE
-        WHEN c.relkind = 'v' THEN 'VIEW'
-        WHEN c.relkind = 'm' THEN 'MATERIALIZED VIEW'
-        else ''
-    END || ' ' || n.nspname || '.' || c.relname || ' IS ''' || replace(d.description, '''', '''''') || ''';'
-FROM pg_class c
-JOIN pg_namespace n ON n.oid = c.relnamespace
-JOIN pg_description d on
-    d.objoid = c.oid
-    AND d.objsubid = 0
-WHERE
-    n.nspname = v_curr.obj_schema
-    AND c.relname = v_curr.obj_name
-    AND d.description is not null;
-
---save comments on dependency columns
-INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
-SELECT
-    p_view_schema,
-    p_view_name,
-    'COMMENT ON COLUMN ' || n.nspname || '.' || c.relname || '.' || a.attname
-    || ' IS ''' || replace(d.description, '''', '''''') || ''';' AS deps_ddl_to_run
-FROM pg_class AS c
-JOIN pg_attribute AS a ON c.oid = a.attrelid
-JOIN pg_namespace AS n ON n.oid = c.relnamespace
-JOIN pg_description AS d ON
-    d.objoid = c.oid
-    AND d.objsubid = a.attnum
-WHERE
-    n.nspname = v_curr.obj_schema
-    AND c.relname = v_curr.obj_name
-    AND d.description IS NOT NULL;
-
---save permissions on object
-INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
-SELECT
-    p_view_schema,
-    p_view_name,
-    'GRANT ' || privilege_type || ' ON ' || table_schema || '.'
-    || table_name || ' TO ' || grantee AS deps_ddl_to_run
-FROM information_schema.role_table_grants
-WHERE
-    table_schema = v_curr.obj_schema
-    AND table_name = v_curr.obj_name;
-
 IF v_curr.obj_type = 'v' THEN
     INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     --save view create statements
@@ -174,6 +123,57 @@ ELSIF v_curr.obj_type = 'm' THEN
         AND matviewname = v_curr.obj_name;
 
 END IF;
+
+--save comments on dependencies
+INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+SELECT
+    p_view_schema,
+    p_view_name,
+    'COMMENT ON ' ||
+    CASE
+        WHEN c.relkind = 'v' THEN 'VIEW'
+        WHEN c.relkind = 'm' THEN 'MATERIALIZED VIEW'
+        else ''
+    END || ' ' || n.nspname || '.' || c.relname || ' IS ''' || replace(d.description, '''', '''''') || ''';'
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+JOIN pg_description d on
+    d.objoid = c.oid
+    AND d.objsubid = 0
+WHERE
+    n.nspname = v_curr.obj_schema
+    AND c.relname = v_curr.obj_name
+    AND d.description is not null;
+
+--save comments on dependency columns
+INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+SELECT
+    p_view_schema,
+    p_view_name,
+    'COMMENT ON COLUMN ' || n.nspname || '.' || c.relname || '.' || a.attname
+    || ' IS ''' || replace(d.description, '''', '''''') || ''';' AS deps_ddl_to_run
+FROM pg_class AS c
+JOIN pg_attribute AS a ON c.oid = a.attrelid
+JOIN pg_namespace AS n ON n.oid = c.relnamespace
+JOIN pg_description AS d ON
+    d.objoid = c.oid
+    AND d.objsubid = a.attnum
+WHERE
+    n.nspname = v_curr.obj_schema
+    AND c.relname = v_curr.obj_name
+    AND d.description IS NOT NULL;
+
+--save permissions on object
+INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+SELECT
+    p_view_schema,
+    p_view_name,
+    'GRANT ' || privilege_type || ' ON ' || table_schema || '.'
+    || table_name || ' TO ' || grantee AS deps_ddl_to_run
+FROM information_schema.role_table_grants
+WHERE
+    table_schema = v_curr.obj_schema
+    AND table_name = v_curr.obj_name;
 
 EXECUTE 'DROP ' ||
   CASE
