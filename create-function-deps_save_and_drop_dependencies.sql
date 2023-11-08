@@ -188,7 +188,7 @@ END loop;
 END;
 $$;
 
-ALTER FUNCTION public.deps_save_and_drop_dependencies OWNER TO natalie;
+ALTER FUNCTION public.deps_save_and_drop_dependencies(VARCHAR, VARCHAR, BOOLEAN) OWNER TO natalie;
 
 COMMENT ON FUNCTION public.deps_save_and_drop_dependencies(VARCHAR, VARCHAR, BOOLEAN) IS 
     '''Use this function when you need to drop+edit+recreate a table or (mat) view with dependencies.
