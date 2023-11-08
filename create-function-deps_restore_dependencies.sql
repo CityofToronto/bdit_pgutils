@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION public.deps_restore_dependencies(p_view_schema IN VARCHAR, p_view_name IN VARCHAR)
-RETURNS NULL
+RETURNS VOID
 LANGUAGE plpgsql
     VOLATILE
     PARALLEL UNSAFE
