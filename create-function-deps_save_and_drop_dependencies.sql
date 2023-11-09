@@ -168,12 +168,17 @@ INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_
 SELECT
     p_view_schema,
     p_view_name,
-    'GRANT ' || privilege_type || ' ON ' || table_schema || '.'
-    || table_name || ' TO ' || grantee || ';' AS deps_ddl_to_run
-FROM information_schema.role_table_grants
+    'GRANT ' || public.priviliges_from_acl(s[2])
+    || ' ON ' || nspname || '.' || relname || ' TO ' || 
+    COALESCE(NULLIF(s[1], ''), 'public') || ';' AS deps_ddl_to_run
+FROM pg_class AS c
+JOIN pg_namespace AS n ON n.oid = c.relnamespace
+JOIN pg_roles AS r ON r.oid = c.relowner,
+UNNEST(COALESCE(relacl::text[], format('{%s=arwdDxt/%s}', rolname, rolname)::text[])) acl, 
+    regexp_split_to_array(acl, '=|/') s
 WHERE
-    table_schema = v_curr.obj_schema
-    AND table_name = v_curr.obj_name;
+    nspname = v_curr.obj_schema
+    AND relname = v_curr.obj_name;
 
 IF dryrun IS FALSE THEN
     EXECUTE 'DROP ' ||
