@@ -1,4 +1,8 @@
-CREATE OR REPLACE FUNCTION public.deps_save_and_drop_dependencies(p_view_schema IN VARCHAR, p_view_name IN VARCHAR, dryrun BOOLEAN default False)
+CREATE OR REPLACE FUNCTION public.deps_save_and_drop_dependencies_dryrun(
+    p_view_schema IN VARCHAR,
+    p_view_name IN VARCHAR,
+    dryrun BOOLEAN default True
+)
 RETURNS VOID
 LANGUAGE plpgsql
     VOLATILE
@@ -59,6 +63,11 @@ FOR v_curr IN
     GROUP BY obj_schema, obj_name, obj_type
     ORDER BY max(depth) DESC
 ) loop
+
+DELETE FROM public.deps_saved_ddl
+WHERE
+    deps_view_schema = v_curr.obj_schema
+    AND deps_view_name = v_curr.obj_name;
 
 IF v_curr.obj_type = 'v' THEN
     INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
@@ -193,10 +202,12 @@ END loop;
 END;
 $$;
 
-ALTER FUNCTION public.deps_save_and_drop_dependencies(VARCHAR, VARCHAR, BOOLEAN) OWNER TO natalie;
+ALTER FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) OWNER TO bdit_admins;
+GRANT EXECUTE ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) TO bdit_humans;
 
-COMMENT ON FUNCTION public.deps_save_and_drop_dependencies(VARCHAR, VARCHAR, BOOLEAN) IS 
-    '''Use this function when you need to drop+edit+recreate a table or (mat) view with dependencies.
+COMMENT ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) IS 
+    '''This version of the function is meant for testing. Use with dryrun = False (default). 
+    Use this function when you need to drop+edit+recreate a table or (mat) view with dependencies.
     This function will recursively iterate through an objects dependencies and save:
     - definition of view/mat view
     - object owner
@@ -211,7 +222,7 @@ COMMENT ON FUNCTION public.deps_save_and_drop_dependencies(VARCHAR, VARCHAR, BOO
     the entries in `public.deps_saved_ddl` first. In that case you will have to delete the records.
     
     Example with dryrun = True;
-    SELECT public.deps_save_and_drop_dependencies(''miovision_api''::text COLLATE pg_catalog."C", ''volumes_15min''::text COLLATE pg_catalog."C", TRUE);
+    SELECT public.deps_save_and_drop_dependencies_dryrun(''miovision_api''::text COLLATE pg_catalog."C", ''volumes_15min''::text COLLATE pg_catalog."C");
+    --examine the create statements: 
     SELECT * FROM public.deps_saved_ddl WHERE deps_view_schema = ''miovision_api'' AND deps_view_name = ''volumes_15min'' ORDER BY deps_id;
-    DELETE FROM public.deps_saved_ddl WHERE deps_view_schema = ''miovision_api'' AND deps_view_name = ''volumes_15min'';
     '''
