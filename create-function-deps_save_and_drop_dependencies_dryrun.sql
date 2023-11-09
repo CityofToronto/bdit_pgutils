@@ -66,8 +66,8 @@ FOR v_curr IN
 
 DELETE FROM public.deps_saved_ddl
 WHERE
-    deps_view_schema = v_curr.obj_schema
-    AND deps_view_name = v_curr.obj_name;
+    deps_view_schema = p_view_schema
+    AND deps_view_name = p_view_name;
 
 IF v_curr.obj_type = 'v' THEN
     INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
