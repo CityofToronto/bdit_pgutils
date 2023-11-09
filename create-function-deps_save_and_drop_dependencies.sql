@@ -24,7 +24,7 @@ COMMENT ON FUNCTION public.deps_save_and_drop_dependencies(VARCHAR, VARCHAR) IS
     - object comments
     - column comments
     - any permissions
-    - DOES NOT HANDLE TRIGGERS ON VIEWS
+    - DOES NOT HANDLE TRIGGERS ON DEPENDENT VIEWS 
     - DROP the dependency
     Then, after dropping, editing, and restoring the original object, use the function 
     public.deps_restore_dependencies(VARCHAR, VARCHAR) to recreate the dependencies. 
