@@ -30,7 +30,7 @@ COMMENT ON FUNCTION public.deps_save_and_drop_dependencies(VARCHAR, VARCHAR) IS
     Then, after dropping, editing, and restoring the original object, use the function 
     public.deps_restore_dependencies(VARCHAR, VARCHAR) to recreate the dependencies. 
     You can also use `dryrun = True` to not drop the dependencies, if you want to check
-    the entries in `public.deps_saved_ddl` first. In that case you will have to delete the records.
+    the entries in `public.deps_saved_ddl` first. 
     
     Example:
     SELECT public.deps_save_and_drop_dependencies(''miovision_api''::text COLLATE pg_catalog."C", ''volumes_15min''::text COLLATE pg_catalog."C");

@@ -206,7 +206,8 @@ ALTER FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, B
 GRANT EXECUTE ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) TO bdit_humans;
 
 COMMENT ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) IS 
-    '''This version of the function is meant for testing. Use with dryrun = False (default). 
+    '''This version of the function is meant for testing. Use with dryrun = True (default) if you want to check
+    the entries in `public.deps_saved_ddl` first before actually dropping the dependencies. 
     Use this function when you need to drop+edit+recreate a table or (mat) view with dependencies.
     This function will recursively iterate through an objects dependencies and save:
     - definition of view/mat view
@@ -215,11 +216,10 @@ COMMENT ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCH
     - object comments
     - column comments
     - any permissions
-    - DROP the dependency
+    - DOES NOT HANDLE TRIGGERS ON VIEWS
+    - DROP the dependency (If dryrun = False)
     Then, after dropping, editing, and restoring the original object, use the function 
     public.deps_restore_dependencies(VARCHAR, VARCHAR) to recreate the dependencies. 
-    You can also use `dryrun = True` to not drop the dependencies, if you want to check
-    the entries in `public.deps_saved_ddl` first. In that case you will have to delete the records.
     
     Example with dryrun = True;
     SELECT public.deps_save_and_drop_dependencies_dryrun(''miovision_api''::text COLLATE pg_catalog."C", ''volumes_15min''::text COLLATE pg_catalog."C");

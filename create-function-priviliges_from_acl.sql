@@ -18,3 +18,4 @@ LANGUAGE SQL AS $$
 $$;
 
 ALTER FUNCTION public.priviliges_from_acl(TEXT) OWNER TO dbadmin;
+GRANT EXECUTE ON FUNCTION public.priviliges_from_acl(TEXT) TO bdit_humans;
