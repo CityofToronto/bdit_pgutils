@@ -202,7 +202,7 @@ END loop;
 END;
 $$;
 
-ALTER FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) OWNER TO bdit_admins;
+ALTER FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) OWNER TO dbadmin;
 GRANT EXECUTE ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) TO bdit_humans;
 
 COMMENT ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) IS 

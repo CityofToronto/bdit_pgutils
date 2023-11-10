@@ -28,4 +28,4 @@ WHERE
 END;
 $$;
 
-ALTER FUNCTION public.deps_restore_dependencies(VARCHAR, VARCHAR) OWNER TO natalie;
+ALTER FUNCTION public.deps_restore_dependencies(VARCHAR, VARCHAR) OWNER TO dbadmin;

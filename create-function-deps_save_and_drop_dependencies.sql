@@ -12,7 +12,8 @@ SELECT public.deps_save_and_drop_dependencies_dry_run(
 );
 $$;
 
-GRANT EXECUTE ON FUNCTION public.deps_save_and_drop_dependencies(VARCHAR, VARCHAR) TO bdit_admins;
+ALTER FUNCTION public.deps_save_and_drop_dependencies(VARCHAR, VARCHAR) OWNER TO dbadmin;
+GRANT EXECUTE ON FUNCTION public.deps_save_and_drop_dependencies(VARCHAR, VARCHAR) TO dbadmin;
 
 COMMENT ON FUNCTION public.deps_save_and_drop_dependencies(VARCHAR, VARCHAR) IS 
     '''This version is only to be used by admins. It drops all dependencies of the inputed object. 

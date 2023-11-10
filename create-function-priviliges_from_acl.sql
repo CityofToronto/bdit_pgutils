@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.priviliges_from_acl(text)
+CREATE OR REPLACE FUNCTION public.priviliges_from_acl(TEXT)
 RETURNS TEXT
 LANGUAGE SQL AS $$
     SELECT string_agg(privilege, ', ')
@@ -16,3 +16,5 @@ LANGUAGE SQL AS $$
         FROM regexp_split_to_table($1, '') AS ch
     ) AS s 
 $$;
+
+ALTER FUNCTION public.priviliges_from_acl(TEXT) OWNER TO dbadmin;
