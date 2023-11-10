@@ -5,7 +5,7 @@ LANGUAGE SQL
     PARALLEL UNSAFE
     COST 100
 AS $$ 
-SELECT public.deps_save_and_drop_dependencies_dry_run(
+SELECT public.deps_save_and_drop_dependencies_dryrun(
     p_view_schema,
     p_view_name,
     False --dryrun = False
