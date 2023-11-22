@@ -13,6 +13,12 @@ $$
 DECLARE v_curr record;
 
 BEGIN
+
+DELETE FROM public.deps_saved_ddl
+WHERE
+    deps_view_schema = p_view_schema
+    AND deps_view_name = p_view_name;
+
 FOR v_curr IN
 (
     --find dependent objects
@@ -63,11 +69,6 @@ FOR v_curr IN
     GROUP BY obj_schema, obj_name, obj_type
     ORDER BY max(depth) DESC
 ) loop
-
-DELETE FROM public.deps_saved_ddl
-WHERE
-    deps_view_schema = p_view_schema
-    AND deps_view_name = p_view_name;
 
 IF v_curr.obj_type = 'v' THEN
     INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
