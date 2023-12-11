@@ -67,7 +67,7 @@ FOR v_curr IN
         WHERE depth > 0
     ) t
     GROUP BY obj_schema, obj_name, obj_type
-    ORDER BY max(depth) DESC
+    ORDER BY max(depth)
 ) loop
 
 IF v_curr.obj_type = 'v' THEN
