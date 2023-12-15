@@ -67,75 +67,11 @@ FOR v_curr IN
         WHERE depth > 0
     ) t
     GROUP BY obj_schema, obj_name, obj_type
-    ORDER BY max(depth)
+    ORDER BY max(depth) DESC
 ) loop
 
-IF v_curr.obj_type = 'v' THEN
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
-    --save view create statements
-    SELECT
-        p_view_schema,
-        p_view_name,
-        'CREATE VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name || ' AS '
-        || definition AS deps_ddl_to_run
-    FROM pg_views
-    WHERE
-        schemaname = v_curr.obj_schema
-        AND viewname = v_curr.obj_name;
-
-    --save view owners 
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
-    SELECT
-        p_view_schema,
-        p_view_name,
-        'ALTER VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name || ' OWNER TO '
-        || viewowner || ';' AS deps_ddl_to_run
-    FROM pg_views
-    WHERE
-        schemaname = v_curr.obj_schema
-        AND viewname = v_curr.obj_name;
-
-ELSIF v_curr.obj_type = 'm' THEN
-
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
-    --save mat view definition
-    SELECT
-        p_view_schema,
-        p_view_name,
-        'CREATE MATERIALIZED VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name
-        || ' AS ' || definition AS deps_ddl_to_run
-    FROM pg_matviews
-    WHERE
-        schemaname = v_curr.obj_schema
-        AND matviewname = v_curr.obj_name;
-    
-    --save index/unique index: 
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
-    SELECT
-        p_view_schema,
-        p_view_name,
-        indexdef || ';' AS deps_ddl_to_run
-    FROM pg_indexes
-    WHERE
-        schemaname = v_curr.obj_schema
-        AND tablename = v_curr.obj_name;
-
-    --save mat view owner: 
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
-    SELECT
-        p_view_schema,
-        p_view_name,
-        'ALTER MATERIALIZED VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name
-        || ' OWNER TO ' || matviewowner || ';' AS deps_ddl_to_run
-    FROM pg_matviews
-    WHERE
-        schemaname = v_curr.obj_schema
-        AND matviewname = v_curr.obj_name;
-
-END IF;
-
 --save comments on dependencies
-INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
 SELECT
     p_view_schema,
     p_view_name,
@@ -156,7 +92,7 @@ WHERE
     AND d.description is not null;
 
 --save comments on dependency columns
-INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
 SELECT
     p_view_schema,
     p_view_name,
@@ -174,7 +110,7 @@ WHERE
     AND d.description IS NOT NULL;
 
 --save permissions on object
-INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
 SELECT
     p_view_schema,
     p_view_name,
@@ -189,6 +125,70 @@ UNNEST(COALESCE(relacl::text[], format('{%s=arwdDxt/%s}', rolname, rolname)::tex
 WHERE
     nspname = v_curr.obj_schema
     AND relname = v_curr.obj_name;
+
+IF v_curr.obj_type = 'v' THEN
+    --save view owners 
+    INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    SELECT
+        p_view_schema,
+        p_view_name,
+        'ALTER VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name || ' OWNER TO '
+        || viewowner || ';' AS deps_ddl_to_run
+    FROM pg_views
+    WHERE
+        schemaname = v_curr.obj_schema
+        AND viewname = v_curr.obj_name;
+
+    INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    --save view create statements
+    SELECT
+        p_view_schema,
+        p_view_name,
+        'CREATE VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name || ' AS '
+        || definition AS deps_ddl_to_run
+    FROM pg_views
+    WHERE
+        schemaname = v_curr.obj_schema
+        AND viewname = v_curr.obj_name;
+
+ELSIF v_curr.obj_type = 'm' THEN
+
+    --save index/unique index: 
+    INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    SELECT
+        p_view_schema,
+        p_view_name,
+        indexdef || ';' AS deps_ddl_to_run
+    FROM pg_indexes
+    WHERE
+        schemaname = v_curr.obj_schema
+        AND tablename = v_curr.obj_name;
+
+    --save mat view owner: 
+    INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    SELECT
+        p_view_schema,
+        p_view_name,
+        'ALTER MATERIALIZED VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name
+        || ' OWNER TO ' || matviewowner || ';' AS deps_ddl_to_run
+    FROM pg_matviews
+    WHERE
+        schemaname = v_curr.obj_schema
+        AND matviewname = v_curr.obj_name;
+
+    --save mat view definition:
+    INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    SELECT
+        p_view_schema,
+        p_view_name,
+        'CREATE MATERIALIZED VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name
+        || ' AS ' || definition AS deps_ddl_to_run
+    FROM pg_matviews
+    WHERE
+        schemaname = v_curr.obj_schema
+        AND matviewname = v_curr.obj_name;
+    
+END IF;
 
 IF dryrun IS FALSE THEN
     EXECUTE 'DROP ' ||
