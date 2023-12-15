@@ -14,7 +14,7 @@ FOR v_curr IN (
     WHERE
         deps_view_schema = p_view_schema
         AND deps_view_name = p_view_name
-    ORDER BY deps_id ASC
+    ORDER BY deps_id DESC
 ) loop
 
 EXECUTE v_curr.deps_ddl_to_run;
