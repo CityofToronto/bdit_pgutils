@@ -71,7 +71,7 @@ FOR v_curr IN
 ) loop
 
 --save comments on dependencies
-INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
 SELECT
     p_view_schema,
     p_view_name,
@@ -92,7 +92,7 @@ WHERE
     AND d.description is not null;
 
 --save comments on dependency columns
-INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
 SELECT
     p_view_schema,
     p_view_name,
@@ -110,7 +110,7 @@ WHERE
     AND d.description IS NOT NULL;
 
 --save permissions on object
-INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
 SELECT
     p_view_schema,
     p_view_name,
@@ -128,7 +128,7 @@ WHERE
 
 IF v_curr.obj_type = 'v' THEN
     --save view owners 
-    INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     SELECT
         p_view_schema,
         p_view_name,
@@ -139,7 +139,7 @@ IF v_curr.obj_type = 'v' THEN
         schemaname = v_curr.obj_schema
         AND viewname = v_curr.obj_name;
 
-    INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     --save view create statements
     SELECT
         p_view_schema,
@@ -154,7 +154,7 @@ IF v_curr.obj_type = 'v' THEN
 ELSIF v_curr.obj_type = 'm' THEN
 
     --save index/unique index: 
-    INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     SELECT
         p_view_schema,
         p_view_name,
@@ -165,7 +165,7 @@ ELSIF v_curr.obj_type = 'm' THEN
         AND tablename = v_curr.obj_name;
 
     --save mat view owner: 
-    INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     SELECT
         p_view_schema,
         p_view_name,
@@ -177,7 +177,7 @@ ELSIF v_curr.obj_type = 'm' THEN
         AND matviewname = v_curr.obj_name;
 
     --save mat view definition:
-    INSERT INTO gwolofs.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     SELECT
         p_view_schema,
         p_view_name,
