@@ -198,6 +198,8 @@ IF dryrun IS FALSE THEN
     END || ' ' || v_curr.obj_schema || '.' || v_curr.obj_name || ';';
 END IF;
 
+RAISE NOTICE 'Completed adding to public.deps_saved_ddl for %.% time=%', v_curr.obj_schema, v_curr.obj_name, timeofday();
+
 END loop;
 
 END;
