@@ -1,7 +1,8 @@
 CREATE OR REPLACE FUNCTION public.deps_save_and_drop_dependencies_dryrun(
     p_view_schema IN VARCHAR,
     p_view_name IN VARCHAR,
-    dryrun BOOLEAN default True
+    dryrun BOOLEAN default True,
+    max_depth integer DEFAULT 20
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -58,9 +59,12 @@ FOR v_curr IN
             JOIN recursive_deps ON
                 deps.ref_schema = recursive_deps.obj_schema
                 AND deps.ref_name = recursive_deps.obj_name
-            WHERE (
-                deps.ref_schema != deps.dep_schema
-                OR deps.ref_name != deps.dep_name)
+            WHERE
+                depth < max_depth
+                AND (
+                    deps.ref_schema != deps.dep_schema
+                    OR deps.ref_name != deps.dep_name
+                )
             )
         SELECT obj_schema, obj_name, obj_type, depth
         FROM recursive_deps
@@ -205,10 +209,10 @@ END loop;
 END;
 $$;
 
-ALTER FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) OWNER TO dbadmin;
-GRANT EXECUTE ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) TO bdit_humans;
+ALTER FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) OWNER TO dbadmin;
+GRANT EXECUTE ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) TO bdit_humans;
 
-COMMENT ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) IS 
+COMMENT ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) IS 
     '''This version of the function is meant for testing. Use with dryrun = True (default) if you want to check
     the entries in `public.deps_saved_ddl` first before actually dropping the dependencies. 
     Use this function when you need to drop+edit+recreate a table or (mat) view with dependencies.
