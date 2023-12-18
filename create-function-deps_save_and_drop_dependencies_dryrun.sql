@@ -227,7 +227,11 @@ COMMENT ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCH
     - DROP the dependency (If dryrun = False)
     Then, after dropping, editing, and restoring the original object, use the function 
     public.deps_restore_dependencies(VARCHAR, VARCHAR) to recreate the dependencies. 
-    
+    `max_depth` parameter is used to prevent infinite recursion in cases where dependencies at one depth
+    relative to the initial object reference each other. May need to test with dryrun=True and increment the max_depth
+    to identify the required levels. Note that if this edge cases is true for your case, you may need to use dryrun = True and
+    manually order/the drop/add statements to correct for self-referential definitions at the same level. 
+
     Example with dryrun = True;
     SELECT public.deps_save_and_drop_dependencies_dryrun(''miovision_api''::text COLLATE pg_catalog."C", ''volumes_15min''::text COLLATE pg_catalog."C");
     --examine the create statements: 
