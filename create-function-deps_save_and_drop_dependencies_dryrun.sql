@@ -1,7 +1,8 @@
 CREATE OR REPLACE FUNCTION public.deps_save_and_drop_dependencies_dryrun(
     p_view_schema IN VARCHAR,
     p_view_name IN VARCHAR,
-    dryrun BOOLEAN default True
+    dryrun BOOLEAN default True,
+    max_depth integer DEFAULT 20
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -58,9 +59,12 @@ FOR v_curr IN
             JOIN recursive_deps ON
                 deps.ref_schema = recursive_deps.obj_schema
                 AND deps.ref_name = recursive_deps.obj_name
-            WHERE (
-                deps.ref_schema != deps.dep_schema
-                OR deps.ref_name != deps.dep_name)
+            WHERE
+                depth < max_depth
+                AND (
+                    deps.ref_schema != deps.dep_schema
+                    OR deps.ref_name != deps.dep_name
+                )
             )
         SELECT obj_schema, obj_name, obj_type, depth
         FROM recursive_deps
@@ -69,70 +73,6 @@ FOR v_curr IN
     GROUP BY obj_schema, obj_name, obj_type
     ORDER BY max(depth) DESC
 ) loop
-
-IF v_curr.obj_type = 'v' THEN
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
-    --save view create statements
-    SELECT
-        p_view_schema,
-        p_view_name,
-        'CREATE VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name || ' AS '
-        || definition AS deps_ddl_to_run
-    FROM pg_views
-    WHERE
-        schemaname = v_curr.obj_schema
-        AND viewname = v_curr.obj_name;
-
-    --save view owners 
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
-    SELECT
-        p_view_schema,
-        p_view_name,
-        'ALTER VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name || ' OWNER TO '
-        || viewowner || ';' AS deps_ddl_to_run
-    FROM pg_views
-    WHERE
-        schemaname = v_curr.obj_schema
-        AND viewname = v_curr.obj_name;
-
-ELSIF v_curr.obj_type = 'm' THEN
-
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
-    --save mat view definition
-    SELECT
-        p_view_schema,
-        p_view_name,
-        'CREATE MATERIALIZED VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name
-        || ' AS ' || definition AS deps_ddl_to_run
-    FROM pg_matviews
-    WHERE
-        schemaname = v_curr.obj_schema
-        AND matviewname = v_curr.obj_name;
-    
-    --save index/unique index: 
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
-    SELECT
-        p_view_schema,
-        p_view_name,
-        indexdef || ';' AS deps_ddl_to_run
-    FROM pg_indexes
-    WHERE
-        schemaname = v_curr.obj_schema
-        AND tablename = v_curr.obj_name;
-
-    --save mat view owner: 
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
-    SELECT
-        p_view_schema,
-        p_view_name,
-        'ALTER MATERIALIZED VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name
-        || ' OWNER TO ' || matviewowner || ';' AS deps_ddl_to_run
-    FROM pg_matviews
-    WHERE
-        schemaname = v_curr.obj_schema
-        AND matviewname = v_curr.obj_name;
-
-END IF;
 
 --save comments on dependencies
 INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
@@ -190,6 +130,70 @@ WHERE
     nspname = v_curr.obj_schema
     AND relname = v_curr.obj_name;
 
+IF v_curr.obj_type = 'v' THEN
+    --save view owners 
+    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    SELECT
+        p_view_schema,
+        p_view_name,
+        'ALTER VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name || ' OWNER TO '
+        || viewowner || ';' AS deps_ddl_to_run
+    FROM pg_views
+    WHERE
+        schemaname = v_curr.obj_schema
+        AND viewname = v_curr.obj_name;
+
+    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    --save view create statements
+    SELECT
+        p_view_schema,
+        p_view_name,
+        'CREATE VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name || ' AS '
+        || definition AS deps_ddl_to_run
+    FROM pg_views
+    WHERE
+        schemaname = v_curr.obj_schema
+        AND viewname = v_curr.obj_name;
+
+ELSIF v_curr.obj_type = 'm' THEN
+
+    --save index/unique index: 
+    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    SELECT
+        p_view_schema,
+        p_view_name,
+        indexdef || ';' AS deps_ddl_to_run
+    FROM pg_indexes
+    WHERE
+        schemaname = v_curr.obj_schema
+        AND tablename = v_curr.obj_name;
+
+    --save mat view owner: 
+    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    SELECT
+        p_view_schema,
+        p_view_name,
+        'ALTER MATERIALIZED VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name
+        || ' OWNER TO ' || matviewowner || ';' AS deps_ddl_to_run
+    FROM pg_matviews
+    WHERE
+        schemaname = v_curr.obj_schema
+        AND matviewname = v_curr.obj_name;
+
+    --save mat view definition:
+    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    SELECT
+        p_view_schema,
+        p_view_name,
+        'CREATE MATERIALIZED VIEW ' || v_curr.obj_schema || '.' || v_curr.obj_name
+        || ' AS ' || definition AS deps_ddl_to_run
+    FROM pg_matviews
+    WHERE
+        schemaname = v_curr.obj_schema
+        AND matviewname = v_curr.obj_name;
+    
+END IF;
+
 IF dryrun IS FALSE THEN
     EXECUTE 'DROP ' ||
     CASE
@@ -198,15 +202,17 @@ IF dryrun IS FALSE THEN
     END || ' ' || v_curr.obj_schema || '.' || v_curr.obj_name || ';';
 END IF;
 
+RAISE NOTICE 'Completed adding to public.deps_saved_ddl for %.% time=%', v_curr.obj_schema, v_curr.obj_name, timeofday();
+
 END loop;
 
 END;
 $$;
 
-ALTER FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) OWNER TO dbadmin;
-GRANT EXECUTE ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) TO bdit_humans;
+ALTER FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) OWNER TO dbadmin;
+GRANT EXECUTE ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) TO bdit_humans;
 
-COMMENT ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN) IS 
+COMMENT ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) IS 
     '''This version of the function is meant for testing. Use with dryrun = True (default) if you want to check
     the entries in `public.deps_saved_ddl` first before actually dropping the dependencies. 
     Use this function when you need to drop+edit+recreate a table or (mat) view with dependencies.
@@ -221,7 +227,11 @@ COMMENT ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCH
     - DROP the dependency (If dryrun = False)
     Then, after dropping, editing, and restoring the original object, use the function 
     public.deps_restore_dependencies(VARCHAR, VARCHAR) to recreate the dependencies. 
-    
+    `max_depth` parameter is used to prevent infinite recursion in cases where dependencies at one depth
+    relative to the initial object reference each other. May need to test with dryrun=True and increment the max_depth
+    to identify the required levels. Note that if this edge cases is true for your case, you may need to use dryrun = True and
+    manually order/the drop/add statements to correct for self-referential definitions at the same level. 
+
     Example with dryrun = True;
     SELECT public.deps_save_and_drop_dependencies_dryrun(''miovision_api''::text COLLATE pg_catalog."C", ''volumes_15min''::text COLLATE pg_catalog."C");
     --examine the create statements: 
