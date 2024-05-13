@@ -31,26 +31,32 @@ $$
 
 --$SELECTION$ = schema_name
 WITH table_prefix AS (
-    SELECT 
+    SELECT
         oid, 
         string_agg(
-            LEFT(prefix, 1), --first letter of each word in table name
+            LEFT(word, 1), --first letter of each word in table name
             ''
+            ORDER BY rn
         ) AS table_alias
     FROM (
         SELECT
             pg_class.oid AS oid,
             pg_class.relname,
-            UNNEST( --array to lines
-                        regexp_split_to_array(
-                            pg_class.relname, --extract table name from schema.relname
-                            '_'
-                        )
-            ) prefix
+            table_name.word,
+            table_name.rn
         FROM pg_namespace
         JOIN pg_catalog.pg_class
             ON pg_class.relnamespace = pg_namespace.oid
-            AND pg_class.relkind IN ('r', 'v', 'm') --tables, views, mat views
+            AND pg_class.relkind IN ('r', 'v', 'm'), --tables, views, mat views
+        LATERAL (
+            SELECT
+                regexp_split_to_table,
+                ordinality
+            FROM regexp_split_to_table(
+                pg_class.relname, --extract table name from schema.relname
+                '_'
+            ) WITH ORDINALITY
+        ) AS table_name(word, rn)
         WHERE
             pg_namespace.nspname = sch_name
     ) AS prefix
