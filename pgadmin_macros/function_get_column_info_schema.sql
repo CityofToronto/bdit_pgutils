@@ -13,8 +13,6 @@ replacing `sch_name` with `$SELECTION$`.
 use the latest version.
 */
 
-
-
 DROP FUNCTION public.get_column_info_schema(text);
 CREATE OR REPLACE FUNCTION public.get_column_info_schema(IN sch_name text) --$SELECTION$ = schema_name
 
@@ -22,6 +20,7 @@ RETURNS TABLE (
     columns_new_line TEXT,
     columns_no_new_line TEXT,
     columns_no_alias TEXT,
+    object_type TEXT,
     table_schema TEXT,
     tbl_name TEXT,
     table_alias TEXT,
@@ -75,6 +74,11 @@ SELECT
     string_agg(
         pg_attribute.attname, ', ' ORDER BY pg_attribute.attnum
     ) AS columns_no_alias,
+    CASE pg_class.relkind
+        WHEN 'r' THEN 'TABLE'
+        WHEN 'v' THEN 'VIEW'
+        WHEN 'm' THEN 'MATERIALIZED VIEW'
+    END AS object_type,
     pg_namespace.nspname::text AS table_schema,
     pg_class.relname::text AS tbl_name,
     table_prefix.table_alias::text,
@@ -95,7 +99,8 @@ GROUP BY
     pg_namespace.nspname, 
     pg_class.relname,
     table_prefix.table_alias,
-    pg_description.description
+    pg_description.description,
+    pg_class.relkind
 ORDER BY pg_class.relname;
 $$
 LANGUAGE SQL;
