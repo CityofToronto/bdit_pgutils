@@ -7,7 +7,7 @@ CREATE OR REPLACE FUNCTION public.datetime_bin_ceil(
 RETURNS timestamp without time zone
 LANGUAGE 'sql'
 COST 100
-IMMUTABLE PARALLEL UNSAFE
+IMMUTABLE PARALLEL SAFE
 AS $BODY$
 
     SELECT TIMESTAMP WITHOUT TIME ZONE 'epoch' + INTERVAL '1 second' * (ceil((extract('epoch' from _timestamp_val)) / (_minutes*60)) * (_minutes*60));
