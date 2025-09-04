@@ -4,32 +4,14 @@ including as a properlly fluffed SELECT statement with an automatically
 generated alias (first letter of each word in table name ('_' as delimeter))
 
 Usage:
-Option 1: Set PGadmin Macro SQL to: the following:
---$SELECTION$ = schema_name.table_name (eg. gis_core.centreline_latest)
-SELECT * FROM public.get_column_info_table('$SELECTION$');
+Set PGadmin Macro to the below select query. This method is preferred vs a function because it will work across databases.
 
-Option 2: Set PGadmin Macro to the body of the below function,
-replacing `sch_table_name` with `$SELECTION$`.
-- This method will work across databases, but it won't automatically
-use the latest version.
+Can be used on:
+schema name: miovision_api
+schema.table: miovision_api.intersection
 
 */
 
-DROP FUNCTION public.get_column_info_table(text);
-CREATE OR REPLACE FUNCTION public.get_column_info_table(IN sch_table_name text) --$SELECTION$ = schema_name.table_name
-
-RETURNS TABLE (
-    columns_new_line TEXT,
-    columns_no_new_line TEXT,
-    columns_no_alias TEXT,
-    table_schema TEXT,
-    tbl_name TEXT,
-    table_alias TEXT,
-    table_comment TEXT
-) AS
-$$
-
---$SELECTION$ = schema_name.table_name
 WITH table_prefix AS (
     SELECT
         oid, 
