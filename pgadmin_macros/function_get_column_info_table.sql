@@ -80,8 +80,23 @@ GROUP BY
     pg_class.relname,
     table_prefix.table_alias,
     pg_description.description
-ORDER BY pg_class.relname;
-$$
-LANGUAGE SQL;
 
-ALTER FUNCTION public.get_column_info_table OWNER TO dbadmin;
+UNION
+SELECT
+    null AS columns_new_line,
+    null AS columns_no_new_line,
+    pg_get_function_identity_arguments(pg_proc.oid) AS columns_no_alias,
+    'function' AS obj_type,
+    pg_namespace.nspname AS obj_schema,
+    format('%I(%s)', pg_proc.proname, oidvectortypes(pg_proc.proargtypes)) AS obj_name,
+    null AS table_alias,
+    pg_description.description AS obj_comment
+FROM pg_proc
+JOIN pg_namespace ON (pg_proc.pronamespace = pg_namespace.oid)
+LEFT JOIN pg_catalog.pg_description
+    ON pg_description.objoid = pg_proc.oid
+    AND pg_description.objsubid = 0
+WHERE
+    pg_namespace.nspname = split_part('$SELECTION$', '.', 1)
+    AND pg_proc.proname LIKE  '%' || split_part('$SELECTION$', '.', 2) || '%'
+ORDER BY obj_name;
