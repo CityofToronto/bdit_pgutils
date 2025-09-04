@@ -1,5 +1,5 @@
 /*
-Function to return column names for a single table in a variety of formats
+Query to return column names for a single table in a variety of formats
 including as a properlly fluffed SELECT statement with an automatically
 generated alias (first letter of each word in table name ('_' as delimeter))
 
@@ -29,7 +29,7 @@ WITH table_prefix AS (
         FROM pg_namespace
         JOIN pg_catalog.pg_class
             ON pg_class.relnamespace = pg_namespace.oid
-            AND pg_class.relkind IN ('r', 'v', 'm'), --tables, views, mat views
+            AND pg_class.relkind IN ('r', 'v', 'm', 'f', 'p'), --tables, views, mat views, foreign table, partitioned table
         LATERAL (
             SELECT
                 regexp_split_to_table,
@@ -40,8 +40,8 @@ WITH table_prefix AS (
             ) WITH ORDINALITY
         ) AS table_name(word, rn)
         WHERE
-            pg_namespace.nspname = split_part(sch_table_name, '.', 1)
-            AND pg_class.relname = split_part(sch_table_name, '.', 2)
+            pg_namespace.nspname = split_part('$SELECTION$', '.', 1)
+            AND pg_class.relname LIKE  '%' || split_part('$SELECTION$', '.', 2) || '%'
     ) AS prefix
     GROUP BY oid
 )
@@ -59,14 +59,21 @@ SELECT
     string_agg(
         pg_attribute.attname, ', ' ORDER BY pg_attribute.attnum
     ) AS columns_no_alias,
-    pg_namespace.nspname::text AS table_schema,
-    pg_class.relname::text AS tbl_name,
+    CASE pg_class.relkind
+        WHEN 'r' THEN 'ordinary table'
+        WHEN 'v' THEN 'view'
+        WHEN 'm' THEN 'materialized view'
+        WHEN 'f' THEN 'foreign table'
+        WHEN 'p' THEN 'partitioned table'
+    END AS obj_type,
+    pg_namespace.nspname::text AS obj_schema,
+    pg_class.relname::text AS obj_name,
     table_prefix.table_alias::text,
-    pg_description.description AS table_comment
+    pg_description.description AS obj_comment
 FROM pg_catalog.pg_namespace
 JOIN pg_catalog.pg_class
     ON pg_class.relnamespace = pg_namespace.oid
-    AND pg_class.relkind IN ('r', 'v', 'm') --tables, views, mat views
+    AND pg_class.relkind IN ('r', 'v', 'm', 'f', 'p') --tables, views, mat views
 JOIN pg_catalog.pg_attribute
     ON pg_class.oid = pg_attribute.attrelid
     AND pg_attribute.attnum > 0
@@ -78,6 +85,7 @@ JOIN table_prefix ON table_prefix.oid = pg_class.oid
 GROUP BY
     pg_namespace.nspname, 
     pg_class.relname,
+    pg_class.relkind,
     table_prefix.table_alias,
     pg_description.description
 
