@@ -40,7 +40,7 @@ WITH table_prefix AS (
             ) WITH ORDINALITY
         ) AS table_name(word, rn)
         WHERE
-            pg_namespace.nspname = split_part('$SELECTION$', '.', 1)
+            pg_namespace.nspname LIKE '%' || split_part('$SELECTION$', '.', 1) || '%'
             AND pg_class.relname LIKE  '%' || split_part('$SELECTION$', '.', 2) || '%'
     ) AS prefix
     GROUP BY oid
@@ -69,7 +69,9 @@ SELECT
     pg_namespace.nspname::text AS obj_schema,
     pg_class.relname::text AS obj_name,
     table_prefix.table_alias::text,
-    pg_description.description AS obj_comment
+    pg_description.description AS obj_comment,
+    pg_size_pretty(pg_total_relation_size(pg_class.oid)) AS total_relation_size_pretty,
+    pg_total_relation_size(pg_class.oid) AS total_relation_size
 FROM pg_catalog.pg_namespace
 JOIN pg_catalog.pg_class
     ON pg_class.relnamespace = pg_namespace.oid
@@ -83,6 +85,7 @@ LEFT JOIN pg_catalog.pg_description
     AND pg_description.objsubid = 0
 JOIN table_prefix ON table_prefix.oid = pg_class.oid
 GROUP BY
+    pg_class.oid,
     pg_namespace.nspname, 
     pg_class.relname,
     pg_class.relkind,
@@ -98,13 +101,15 @@ SELECT
     pg_namespace.nspname AS obj_schema,
     format('%I(%s)', pg_proc.proname, oidvectortypes(pg_proc.proargtypes)) AS obj_name,
     null AS table_alias,
-    pg_description.description AS obj_comment
+    pg_description.description AS obj_comment,
+    pg_size_pretty(pg_total_relation_size(pg_proc.oid)) AS total_relation_size_pretty,
+    pg_total_relation_size(pg_proc.oid) AS total_relation_size
 FROM pg_proc
 JOIN pg_namespace ON (pg_proc.pronamespace = pg_namespace.oid)
 LEFT JOIN pg_catalog.pg_description
     ON pg_description.objoid = pg_proc.oid
     AND pg_description.objsubid = 0
 WHERE
-    pg_namespace.nspname = split_part('$SELECTION$', '.', 1)
+    pg_namespace.nspname LIKE '%' || split_part('$SELECTION$', '.', 1) || '%'
     AND pg_proc.proname LIKE  '%' || split_part('$SELECTION$', '.', 2) || '%'
 ORDER BY obj_name;
