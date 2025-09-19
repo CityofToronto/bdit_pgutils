@@ -69,7 +69,7 @@ AS $BODY$
         SELECT '    style '
             || mermaid_dependency_diagram.sch_name || '.'
             || mermaid_dependency_diagram.obj_name
-            || ' fill:#f9f,stroke:#333,stroke-width:4px'
+            || ' fill:#f9f,stroke:#333,stroke-width:4px,color:black'
     ) AS objects
 
 $BODY$;
