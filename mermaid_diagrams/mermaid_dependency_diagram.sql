@@ -41,7 +41,7 @@ AS $BODY$
                 --    WHEN 'm' THEN lat.full_name || '[[' || lat.full_name || ']]'
                 --    ELSE lat.full_name
                 --END,
-                objs.full_name || '[[' || objs.full_name || ']]', chr(10)
+                objs.full_name || '[' || objs.full_name || ']', chr(10)
             ) || chr(10) || '    end' AS mermaid_object
         FROM (
             SELECT DISTINCT dep_schema AS obj_schema, dep_schema || '.' || dep_name AS full_name
