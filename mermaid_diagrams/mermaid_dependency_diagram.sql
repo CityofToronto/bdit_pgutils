@@ -41,13 +41,19 @@ AS $BODY$
                 --    WHEN 'm' THEN lat.full_name || '[[' || lat.full_name || ']]'
                 --    ELSE lat.full_name
                 --END,
-                objs.full_name || '[' || objs.full_name || ']', chr(10)
+                objs.full_name || '[' || objs.obj_name || ']', chr(10)
             ) || chr(10) || '    end' AS mermaid_object
         FROM (
-            SELECT DISTINCT dep_schema AS obj_schema, dep_schema || '.' || dep_name AS full_name
+            SELECT DISTINCT
+                dep_schema AS obj_schema,
+                dep_schema || '.' || dep_name AS full_name,
+                dep_name AS obj_name
             FROM dependencies
             UNION
-            SELECT DISTINCT ref_schema AS obj_schema, ref_schema || '.' || ref_name  AS full_name
+            SELECT DISTINCT
+                ref_schema AS obj_schema,
+                ref_schema || '.' || ref_name  AS full_name,
+                ref_name AS obj_name
             FROM dependencies
         ) AS objs
         GROUP BY obj_schema
