@@ -29,7 +29,10 @@ AS $BODY$
     )
 
     --aggregate subgraphs and relationships into a complete diagram
-    SELECT 'flowchart TD' || chr(10) || string_agg('    ' || mermaid_object, chr(10)) AS mermaid_diagram
+    SELECT
+    '%%{init: {''theme'': ''neutral'', ''flowchart'': {''defaultRenderer'': ''elk''}}}%%' || chr(10) ||
+    'flowchart TD' || chr(10) ||
+    string_agg('    ' || mermaid_object, chr(10)) AS mermaid_diagram
     FROM (
         --subgraphs for each schema
         SELECT
