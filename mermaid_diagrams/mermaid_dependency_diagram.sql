@@ -1,8 +1,7 @@
---DROP FUNCTION gwolofs.mermaid_dependency_diagram(text, text);
+--DROP FUNCTION public.mermaid_dependency_diagram(text, text);
 
-CREATE OR REPLACE FUNCTION gwolofs.mermaid_dependency_diagram (
-    sch_name text,
-    obj_name text
+CREATE OR REPLACE FUNCTION public.mermaid_dependency_diagram (
+    input_obj text
 ) RETURNS TEXT
     LANGUAGE sql
     COST 100
@@ -11,20 +10,30 @@ AS $BODY$
 
     WITH dependencies AS (
         --every object that has a relationship with some object in the recursive dependency tree (2nd level dependencies)
-        SELECT dep_schema, dep_name, ref_schema, ref_name
-        FROM gwolofs.dependent_relations AS deps
+        SELECT
+            dep_schema,
+            dep_name,
+            ref_schema,
+            ref_name
+        FROM public.dependent_relations AS deps
         WHERE
-            dep_schema || '.' || dep_name IN (
-                SELECT obj_schema || '.' || obj_name FROM gwolofs.get_recursive_dependencies(
-                    mermaid_dependency_diagram.sch_name,
-                    mermaid_dependency_diagram.obj_name
+            (dep_schema || '.' || dep_name IN (
+                SELECT obj_schema || '.' || obj_name
+                FROM public.get_recursive_dependencies(
+                    split_part(input_obj, '.', 1),
+                    split_part(input_obj, '.', 2)
                 )
             )
             OR ref_schema || '.' || ref_name IN (
-                SELECT obj_schema || '.' || obj_name FROM gwolofs.get_recursive_dependencies(
-                    mermaid_dependency_diagram.sch_name,
-                    mermaid_dependency_diagram.obj_name
+                SELECT obj_schema || '.' || obj_name
+                FROM public.get_recursive_dependencies(
+                    split_part(input_obj, '.', 1),
+                    split_part(input_obj, '.', 2)
                 )
+            ))
+            AND NOT (
+                dep_name = ref_name
+                AND dep_schema = ref_schema
             )
     )
 
@@ -55,7 +64,7 @@ AS $BODY$
             UNION
             SELECT DISTINCT
                 ref_schema AS obj_schema,
-                ref_schema || '.' || ref_name  AS full_name,
+                ref_schema || '.' || ref_name AS full_name,
                 ref_name AS obj_name
             FROM dependencies
         ) AS objs
@@ -63,12 +72,12 @@ AS $BODY$
         UNION ALL
         --relationships between nodes
         SELECT mermaid_relation
-        FROM gwolofs.dependent_relations AS deps
+        FROM public.dependent_relations AS deps
         WHERE dep_schema || '.' || dep_name IN (
             SELECT obj_schema || '.' || obj_name
-            FROM gwolofs.get_recursive_dependencies(
-                    mermaid_dependency_diagram.sch_name,
-                    mermaid_dependency_diagram.obj_name
+            FROM public.get_recursive_dependencies(
+                    split_part(input_obj, '.', 1),
+                    split_part(input_obj, '.', 2)
                 )
         ) AND NOT (
             deps.ref_schema = deps.dep_schema
@@ -76,8 +85,7 @@ AS $BODY$
         )
         UNION ALL
         SELECT '    style '
-            || mermaid_dependency_diagram.sch_name || '.'
-            || mermaid_dependency_diagram.obj_name
+            || input_obj
             || ' fill:#f9f,stroke:#333,stroke-width:4px,color:black'
     ) AS objects
 
