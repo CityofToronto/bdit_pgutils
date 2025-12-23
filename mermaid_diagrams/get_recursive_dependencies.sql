@@ -1,6 +1,6 @@
--- DROP FUNCTION gwolofs.get_recursive_dependencies(text, text);
+-- DROP FUNCTION public.get_recursive_dependencies(text, text);
 
-CREATE OR REPLACE FUNCTION gwolofs.get_recursive_dependencies (
+CREATE OR REPLACE FUNCTION public.get_recursive_dependencies (
     sch_name text,
     obj_name text
 ) RETURNS TABLE(oid oid, obj_schema character varying, obj_name character varying, obj_type character varying) 
@@ -30,7 +30,7 @@ AS $BODY$
                 FROM
                     (
                         SELECT dep_oid, ref_schema, ref_name, dep_type, dep_schema, dep_name
-                        FROM gwolofs.dependent_relations
+                        FROM public.dependent_relations
                     ) AS deps
                 JOIN recursive_deps ON
                     deps.ref_schema = recursive_deps.obj_schema
