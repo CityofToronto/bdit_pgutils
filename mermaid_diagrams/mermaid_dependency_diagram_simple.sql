@@ -11,17 +11,23 @@ AS $BODY$
 
     WITH dependencies AS (
         --every object that has a relationship with some object in the recursive dependency tree (2nd level dependencies)
-        SELECT dep_schema, dep_name, ref_schema, ref_name
+        SELECT
+            dep_schema,
+            dep_name,
+            ref_schema,
+            ref_name
         FROM gwolofs.dependent_relations AS deps
         WHERE
             dep_schema || '.' || dep_name IN (
-                SELECT obj_schema || '.' || obj_name FROM gwolofs.get_recursive_dependencies(
+                SELECT obj_schema || '.' || obj_name
+                FROM gwolofs.get_recursive_dependencies(
                     mermaid_dependency_diagram_simple.sch_name,
                     mermaid_dependency_diagram_simple.obj_name
                 )
             )
             AND ref_schema || '.' || ref_name IN (
-                SELECT obj_schema || '.' || obj_name FROM gwolofs.get_recursive_dependencies(
+                SELECT obj_schema || '.' || obj_name
+                FROM gwolofs.get_recursive_dependencies(
                     mermaid_dependency_diagram_simple.sch_name,
                     mermaid_dependency_diagram_simple.obj_name
                 )
@@ -44,13 +50,19 @@ AS $BODY$
                 --    WHEN 'm' THEN lat.full_name || '[[' || lat.full_name || ']]'
                 --    ELSE lat.full_name
                 --END,
-                objs.full_name || '[[' || objs.full_name || ']]', chr(10)
+                objs.full_name || '[[' || objs.obj_name || ']]', chr(10)
             ) || chr(10) || '    end' AS mermaid_object
         FROM (
-            SELECT DISTINCT dep_schema AS obj_schema, dep_schema || '.' || dep_name AS full_name
+            SELECT DISTINCT
+                dep_schema AS obj_schema,
+                dep_schema || '.' || dep_name AS full_name,
+                dep_name AS obj_name
             FROM dependencies
             UNION
-            SELECT DISTINCT ref_schema AS obj_schema, ref_schema || '.' || ref_name  AS full_name
+            SELECT DISTINCT
+                ref_schema AS obj_schema,
+                ref_schema || '.' || ref_name AS full_name,
+                ref_name AS obj_name
             FROM dependencies
         ) AS objs
         GROUP BY obj_schema
