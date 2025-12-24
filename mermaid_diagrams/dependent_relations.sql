@@ -17,9 +17,10 @@ CREATE OR REPLACE VIEW public.dependent_relations AS (
 
     --view/mat view relationships
     SELECT DISTINCT
-        rwr_cl.oid AS dep_oid,
+        ref_cl.oid AS ref_oid,
         ref_nsp.nspname AS ref_schema,
         ref_cl.relname AS ref_name,
+        rwr_cl.oid AS dep_oid,
         rwr_nsp.nspname AS dep_schema,
         rwr_cl.relname AS dep_name,
         ref_nsp.nspname || '.' || ref_cl.relname ||
@@ -35,14 +36,16 @@ CREATE OR REPLACE VIEW public.dependent_relations AS (
     WHERE
         dep.deptype = 'n'
         AND dep.classid = 'pg_rewrite'::regclass
+        AND ref_cl.oid != rwr_cl.oid
 
     UNION
 
     --foreign key relationships
     SELECT
-        con.oid AS dep_oid,
+        ref_cl.oid AS ref_oid,
         ref_nsp.nspname AS ref_schema,
         ref_cl.relname AS ref_name,
+        dep_cl.oid AS dep_oid,
         dep_nsp.nspname AS dep_schema,
         dep_cl.relname AS dep_name,
         ref_nsp.nspname || '.' || ref_cl.relname ||
