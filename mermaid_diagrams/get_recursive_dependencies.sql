@@ -102,7 +102,11 @@ BEGIN
             ) AS t
         GROUP BY t.oid, t.obj_schema, t.obj_name
         ORDER BY max(depth) DESC;
-
+    ELSEIF recursive_direction = 'both' THEN
+        RETURN QUERY
+        SELECT * FROM public.get_recursive_dependencies(input_obj, 'down')
+        UNION
+        SELECT * FROM public.get_recursive_dependencies(input_obj, 'up');
     END IF;
 
     END;
@@ -112,4 +116,5 @@ $BODY$;
 /*Examples:
 SELECT public.get_recursive_dependencies('miovision_validation.valid_legs_view', 'down')
 SELECT public.get_recursive_dependencies('miovision_validation.valid_legs_view', 'up')
+SELECT public.get_recursive_dependencies('miovision_validation.valid_legs_view', 'both')
 */
