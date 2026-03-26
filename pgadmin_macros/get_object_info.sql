@@ -69,6 +69,7 @@ SELECT
     pg_namespace.nspname::text AS obj_schema,
     pg_class.relname::text AS obj_name,
     table_prefix.table_alias::text,
+    r.rolname AS owner,
     pg_description.description AS obj_comment,
     pg_size_pretty(pg_total_relation_size(pg_class.oid)) AS total_relation_size_pretty,
     pg_total_relation_size(pg_class.oid) AS total_relation_size
@@ -84,13 +85,15 @@ LEFT JOIN pg_catalog.pg_description
     ON pg_description.objoid = pg_class.oid
     AND pg_description.objsubid = 0
 JOIN table_prefix ON table_prefix.oid = pg_class.oid
+JOIN pg_catalog.pg_roles r ON r.oid = pg_class.relowner
 GROUP BY
     pg_class.oid,
     pg_namespace.nspname, 
     pg_class.relname,
     pg_class.relkind,
     table_prefix.table_alias,
-    pg_description.description
+    pg_description.description,
+    r.rolname
 
 UNION
 SELECT
@@ -101,11 +104,13 @@ SELECT
     pg_namespace.nspname AS obj_schema,
     format('%I(%s)', pg_proc.proname, oidvectortypes(pg_proc.proargtypes)) AS obj_name,
     null AS table_alias,
+    r.rolname AS owner,
     pg_description.description AS obj_comment,
     pg_size_pretty(pg_total_relation_size(pg_proc.oid)) AS total_relation_size_pretty,
     pg_total_relation_size(pg_proc.oid) AS total_relation_size
 FROM pg_proc
 JOIN pg_namespace ON (pg_proc.pronamespace = pg_namespace.oid)
+JOIN pg_catalog.pg_roles r ON r.oid = pg_proc.proowner
 LEFT JOIN pg_catalog.pg_description
     ON pg_description.objoid = pg_proc.oid
     AND pg_description.objsubid = 0
