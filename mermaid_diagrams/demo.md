@@ -1,5 +1,21 @@
+# Mermaid Diagrams in Postgres
+
+The function `public.mermaid_dependency_diagram` can be used to create mermaid diagrams of objects and their dependents/dependencies.
+- Paste the resulting diagrams into `mermaid` code blocks to render inside of `.md` files.
+  - Note: the formatting is prettier if you view the diagrams on https://mermaid.ai/live/ instead of github, because it renders the "ELK" theme, which is better for complex diagrams. 
+- Explore the following parameters:
+  - `input_obj`: schema qualified object to base tree around (eg. `'miovision_validation.valid_legs_view'`)
+  - `recursive_direction`: `'up'` to find parents, `'down'` to find children, or `'both'`
+  - `simple_diagram`: `False` to also traverse one level up from each object in the core tree. `True` to turn this feature off. 
+
+## Examples
+
 ```sql
-SELECT public.mermaid_dependency_diagram(input_obj:='miovision_validation.valid_legs_view', recursive_direciton:='up', simple_diagram:=True)
+SELECT public.mermaid_dependency_diagram(
+    input_obj:='miovision_validation.valid_legs_view',
+    recursive_direciton:='up',
+    simple_diagram:=True
+)
 ```
 
 ```mermaid
@@ -43,7 +59,11 @@ flowchart TD
 ```
 
 ```sql
-SELECT public.mermaid_dependency_diagram(input_obj:='miovision_validation.valid_legs_view', recursive_direciton:='down', simple_diagram:=True)
+SELECT public.mermaid_dependency_diagram(
+    input_obj:='miovision_validation.valid_legs_view',
+    recursive_direciton:='down',
+    simple_diagram:=True
+)
 ```
 
 ```mermaid
@@ -58,7 +78,11 @@ flowchart TD
 ```
 
 ```sql
-SELECT public.mermaid_dependency_diagram(input_obj:='miovision_validation.valid_legs_view', recursive_direciton:='down', simple_diagram:=False)
+SELECT public.mermaid_dependency_diagram(
+    input_obj:='miovision_validation.valid_legs_view',
+    recursive_direciton:='down',
+    simple_diagram:=False
+)
 ```
 
 ```mermaid
@@ -79,7 +103,11 @@ flowchart TD
 ```
 
 ```sql
-SELECT public.mermaid_dependency_diagram(input_obj:='miovision_validation.valid_legs_view', recursive_direciton:='both', simple_diagram:=False)
+SELECT public.mermaid_dependency_diagram(
+    input_obj:='miovision_validation.valid_legs_view',
+    recursive_direciton:='both',
+    simple_diagram:=False
+)
 ```
 
 ```mermaid
