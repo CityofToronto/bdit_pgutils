@@ -1,6 +1,6 @@
---DROP VIEW public.dependent_relations;
+--DROP VIEW dbadmin.dependent_relations;
 
-CREATE OR REPLACE VIEW public.dependent_relations AS (
+CREATE OR REPLACE VIEW dbadmin.dependent_relations AS (
 
     WITH fkey_constraints AS (
         SELECT
