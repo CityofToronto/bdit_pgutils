@@ -1,6 +1,6 @@
---DROP FUNCTION public.mermaid_dependency_diagram(text, text);
+--DROP FUNCTION dbadmin.mermaid_dependency_diagram(text, text);
 
-CREATE OR REPLACE FUNCTION public.mermaid_dependency_diagram (
+CREATE OR REPLACE FUNCTION dbadmin.mermaid_dependency_diagram (
     input_obj text,
     recursive_direciton text,
     simple_diagram boolean
@@ -21,17 +21,17 @@ BEGIN
                 dep_name,
                 ref_schema,
                 ref_name
-            FROM public.dependent_relations AS deps
+            FROM dbadmin.dependent_relations AS deps
             WHERE
                 dep_schema || '.' || dep_name IN (
                     SELECT obj_schema || '.' || obj_name
-                    FROM public.get_recursive_dependencies(
+                    FROM dbadmin.get_recursive_dependencies(
                         input_obj, recursive_direciton
                     )
                 )
                 OR ref_schema || '.' || ref_name IN (
                     SELECT obj_schema || '.' || obj_name
-                    FROM public.get_recursive_dependencies(
+                    FROM dbadmin.get_recursive_dependencies(
                         input_obj, recursive_direciton
                     )
                 );
@@ -39,13 +39,13 @@ BEGIN
         --relationships between nodes
         CREATE TEMP TABLE mermaid_relations ON COMMIT DROP AS
         SELECT mermaid_relation
-        FROM public.dependent_relations AS deps
+        FROM dbadmin.dependent_relations AS deps
         WHERE ref_schema || '.' || ref_name IN (
             SELECT obj_schema || '.' || obj_name
-            FROM public.get_recursive_dependencies(input_obj, recursive_direciton)
+            FROM dbadmin.get_recursive_dependencies(input_obj, recursive_direciton)
         ) OR dep_schema || '.' || dep_name IN (
             SELECT obj_schema || '.' || obj_name
-            FROM public.get_recursive_dependencies(input_obj, recursive_direciton)
+            FROM dbadmin.get_recursive_dependencies(input_obj, recursive_direciton)
         );
         
     ELSEIF simple_diagram = True THEN
@@ -57,27 +57,27 @@ BEGIN
                 dep_name,
                 ref_schema,
                 ref_name
-            FROM public.dependent_relations AS deps
+            FROM dbadmin.dependent_relations AS deps
             WHERE
                 dep_schema || '.' || dep_name IN (
                     SELECT obj_schema || '.' || obj_name
-                    FROM public.get_recursive_dependencies(input_obj, recursive_direciton)
+                    FROM dbadmin.get_recursive_dependencies(input_obj, recursive_direciton)
                 )
                 AND ref_schema || '.' || ref_name IN (
                     SELECT obj_schema || '.' || obj_name
-                    FROM public.get_recursive_dependencies(input_obj, recursive_direciton)
+                    FROM dbadmin.get_recursive_dependencies(input_obj, recursive_direciton)
                 );
 
         --relationships between nodes
         CREATE TEMP TABLE mermaid_relations ON COMMIT DROP AS
         SELECT mermaid_relation
-        FROM public.dependent_relations AS deps
+        FROM dbadmin.dependent_relations AS deps
         WHERE ref_schema || '.' || ref_name IN (
             SELECT obj_schema || '.' || obj_name
-            FROM public.get_recursive_dependencies(input_obj, recursive_direciton)
+            FROM dbadmin.get_recursive_dependencies(input_obj, recursive_direciton)
         ) AND dep_schema || '.' || dep_name IN (
             SELECT obj_schema || '.' || obj_name
-            FROM public.get_recursive_dependencies(input_obj, recursive_direciton)
+            FROM dbadmin.get_recursive_dependencies(input_obj, recursive_direciton)
         );
     
     END IF;
@@ -134,18 +134,18 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION public.mermaid_dependency_diagram(text, text, boolean)
+ALTER FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean)
 OWNER TO dbadmin;
 
-GRANT EXECUTE ON FUNCTION public.mermaid_dependency_diagram(text, text, boolean) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean) TO PUBLIC;
 
-GRANT EXECUTE ON FUNCTION public.mermaid_dependency_diagram(text, text, boolean) TO bdit_humans;
+GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean) TO bdit_humans;
 
-GRANT EXECUTE ON FUNCTION public.mermaid_dependency_diagram(text, text, boolean) TO dbadmin;
+GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean) TO dbadmin;
 
 
 --an overloaded version with some defaults specified
-CREATE OR REPLACE FUNCTION public.mermaid_dependency_diagram (
+CREATE OR REPLACE FUNCTION dbadmin.mermaid_dependency_diagram (
     input_obj text
 ) RETURNS TEXT
     LANGUAGE sql
@@ -153,18 +153,18 @@ CREATE OR REPLACE FUNCTION public.mermaid_dependency_diagram (
     VOLATILE PARALLEL UNSAFE
 AS $BODY$
 
-SELECT public.mermaid_dependency_diagram(
+SELECT dbadmin.mermaid_dependency_diagram(
     input_obj:=input_obj,
     recursive_direciton:='both',
     simple_diagram:='True'
 );
 $BODY$;
 
-ALTER FUNCTION public.mermaid_dependency_diagram(text)
+ALTER FUNCTION dbadmin.mermaid_dependency_diagram(text)
     OWNER TO dbadmin;
 
-GRANT EXECUTE ON FUNCTION public.mermaid_dependency_diagram(text) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text) TO PUBLIC;
 
-GRANT EXECUTE ON FUNCTION public.mermaid_dependency_diagram(text) TO bdit_humans;
+GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text) TO bdit_humans;
 
-GRANT EXECUTE ON FUNCTION public.mermaid_dependency_diagram(text) TO dbadmin;
+GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text) TO dbadmin;

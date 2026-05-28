@@ -4,7 +4,7 @@
 
 # Mermaid Diagrams in Postgres
 
-The function `public.mermaid_dependency_diagram` can be used to create mermaid diagrams of objects and their dependents/dependencies.
+The function `dbadmin.mermaid_dependency_diagram` can be used to create mermaid diagrams of objects and their dependents/dependencies.
 - Paste the resulting diagrams into `mermaid` code blocks to render inside of `.md` files.
   - Note: the formatting is prettier if you view the diagrams on https://mermaid.ai/live/ instead of github, because it renders the "ELK" theme, which is better for complex diagrams. 
 - Explore the following parameters:
@@ -15,7 +15,7 @@ The function `public.mermaid_dependency_diagram` can be used to create mermaid d
 ## Examples
 
 ```sql
-SELECT public.mermaid_dependency_diagram(
+SELECT dbadmin.mermaid_dependency_diagram(
     input_obj:='miovision_validation.valid_legs_view',
     recursive_direciton:='up',
     simple_diagram:=True
@@ -63,7 +63,7 @@ flowchart TD
 ```
 
 ```sql
-SELECT public.mermaid_dependency_diagram(
+SELECT dbadmin.mermaid_dependency_diagram(
     input_obj:='miovision_validation.valid_legs_view',
     recursive_direciton:='down',
     simple_diagram:=True
@@ -82,7 +82,7 @@ flowchart TD
 ```
 
 ```sql
-SELECT public.mermaid_dependency_diagram(
+SELECT dbadmin.mermaid_dependency_diagram(
     input_obj:='miovision_validation.valid_legs_view',
     recursive_direciton:='down',
     simple_diagram:=False
@@ -107,7 +107,7 @@ flowchart TD
 ```
 
 ```sql
-SELECT public.mermaid_dependency_diagram(
+SELECT dbadmin.mermaid_dependency_diagram(
     input_obj:='miovision_validation.valid_legs_view',
     recursive_direciton:='both',
     simple_diagram:=False
