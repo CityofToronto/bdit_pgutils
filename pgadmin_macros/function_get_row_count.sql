@@ -1,22 +1,13 @@
 /*
-Function to quickly return row count of a table as a formatted text field.
+Query to return approximate row count of a table as a formatted text field.
 
-Usage: Set PGadmin Macro SQL to:
---$SELECTION$ = schema_name.table_name (eg. rescu.volumes_15min)
-SELECT public.get_row_count('$SELECTION$');
+Usage:
+Set PGadmin Macro to the below select query.
+Highlighted text (schema_name.table_name) will be populated into $SELECTION$
 */
 
-DROP FUNCTION public.get_row_count(text);
-CREATE OR REPLACE FUNCTION public.get_row_count(IN schema_table text)
-RETURNS TEXT AS
-$$
-DECLARE
-    row_count TEXT;
-BEGIN
-    EXECUTE 'SELECT TO_CHAR(COUNT(1), ''999,999,999,999,999'') AS row_count FROM ' || schema_table
-    INTO row_count;
-  
-    RETURN row_count;
-END;
-$$
-LANGUAGE plpgsql;
+SELECT
+    '$SELECTION$' AS schema_table,
+    (xpath('/row/c/text()', query_to_xml(
+        'SELECT TO_CHAR(COUNT(1) * 100, ''999,999,999,999,999'') AS c from $SELECTION$ TABLESAMPLE SYSTEM (1)',
+        FALSE, TRUE, '')))[1]::text AS approx_row_count;
