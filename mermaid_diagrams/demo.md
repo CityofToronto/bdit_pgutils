@@ -1,3 +1,7 @@
+- [Mermaid Diagrams in Postgres](#mermaid-diagrams-in-postgres)
+  - [Examples](#examples)
+- [Shape Examples](#shape-examples)
+
 # Mermaid Diagrams in Postgres
 
 The function `public.mermaid_dependency_diagram` can be used to create mermaid diagrams of objects and their dependents/dependencies.
@@ -268,4 +272,63 @@ intersection_uid->intersection_uid|miovision_api.alerts
     miovision_validation.golden_data_matched_grouped --> miovision_validation.golden_error_agg_intersection
     miovision_validation.error_thresholds --> miovision_validation.golden_error_agg_leg
         style miovision_validation.valid_legs_view fill:#f9f,stroke:#333,stroke-width:4px,color:black
+```
+
+# Shape Examples
+
+Visual guide to shapes: https://mermaid.js.org/syntax/flowchart.html#complete-list-of-new-shapes
+
+```mermaid
+flowchart RL
+    bang@{shape: bang, label: bang}
+    card@{shape: card, label: card}
+    cloud@{shape: cloud, label: cloud}
+    hourglass@{shape: hourglass, label: hourglass}
+    collate@{shape: collate, label: collate}
+    bolt@{shape: bolt, label: bolt}
+    brace@{shape: brace, label: brace}
+    comment@{shape: comment, label: comment}
+    braces@{shape: braces, label: braces}
+    datastore@{shape: datastore, label: datastore}
+    cylinder@{shape: cylinder, label: cylinder}
+    cyl@{shape: cyl, label: cyl}
+    database@{shape: database, label: database}
+    diamond@{shape: diamond, label: diamond}
+    diam@{shape: diam, label: diam}
+    decision@{shape: decision, label: decision}
+    delay@{shape: delay, label: delay}
+    das@{shape: das, label: das}
+    disk@{shape: disk, label: disk}
+    document@{shape: document, label: document}
+    doc@{shape: doc, label: doc}
+    rounded@{shape: rounded, label: rounded}
+    event@{shape: event, label: event}
+    triangle@{shape: triangle, label: triangle}
+    tri@{shape: tri, label: tri}
+    extract@{shape: extract, label: extract}
+    fork@{shape: fork, label: fork}
+    join@{shape: join, label: join}
+    junction@{shape: junction, label: junction}
+    manual@{shape: manual, label: manual}
+    trapezoid@{shape: trapezoid, label: trapezoid}
+    docs@{shape: docs, label: docs}
+    documents@{shape: documents, label: documents}
+    processes@{shape: processes, label: processes}
+    odd@{shape: odd, label: odd}
+    flag@{shape: flag, label: flag}
+    hexagon@{shape: hexagon, label: hexagon}
+    hex@{shape: hex, label: hex}
+    priority@{shape: priority, label: priority}
+    rectangle@{shape: rectangle, label: rectangle}
+    rect@{shape: rect, label: rect}
+    proc@{shape: proc, label: proc}
+    circle@{shape: circle, label: circle}
+    circ@{shape: circ, label: circ}
+    stop@{shape: stop, label: stop}
+    subprocess@{shape: subprocess, label: subprocess}
+    summary@{shape: summary, label: summary}
+    stadium@{shape: stadium, label: stadium}
+    terminal@{shape: terminal, label: terminal}
+    pill@{shape: pill, label: pill}
+    text@{shape: text, label: text}
 ```
