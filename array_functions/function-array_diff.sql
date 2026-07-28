@@ -1,17 +1,29 @@
+--DROP FUNCTION public.array_diff;
 CREATE OR REPLACE FUNCTION public.array_diff(
     array1 anyarray,
     array2 anyarray
 )
 RETURNS anyarray
-LANGUAGE sql
+LANGUAGE plpgsql
 PARALLEL SAFE
 IMMUTABLE AS $$
-    SELECT COALESCE(ARRAY_AGG(elem), '{}')
-    FROM UNNEST(array1) AS elem
-    WHERE elem <> ALL(array2)
+DECLARE r array1%TYPE;
+
+BEGIN
+    IF array1 IS NULL THEN
+        RETURN array2;
+    ELSIF array2 IS NULL THEN
+        RETURN array1;
+    ELSE
+        SELECT COALESCE(ARRAY_AGG(elem), '{}') INTO r
+        FROM UNNEST(array1) AS elem
+        WHERE elem <> ALL(array2);
+        RETURN r;
+    END IF;
+END;
 $$;
 
-ALTER FUNCTION public.array_diff OWNER TO postgres;
+ALTER FUNCTION public.array_diff OWNER TO dbadmin;
 
 GRANT EXECUTE ON FUNCTION public.array_diff TO public;
 
