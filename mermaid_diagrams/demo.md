@@ -279,56 +279,67 @@ intersection_uid->intersection_uid|miovision_api.alerts
 Visual guide to shapes: https://mermaid.js.org/syntax/flowchart.html#complete-list-of-new-shapes
 
 ```mermaid
-flowchart RL
-    bang@{shape: bang, label: bang}
-    card@{shape: card, label: card}
-    cloud@{shape: cloud, label: cloud}
-    hourglass@{shape: hourglass, label: hourglass}
-    collate@{shape: collate, label: collate}
-    bolt@{shape: bolt, label: bolt}
-    brace@{shape: brace, label: brace}
-    comment@{shape: comment, label: comment}
-    braces@{shape: braces, label: braces}
-    datastore@{shape: datastore, label: datastore}
-    cylinder@{shape: cylinder, label: cylinder}
-    cyl@{shape: cyl, label: cyl}
-    database@{shape: database, label: database}
-    diamond@{shape: diamond, label: diamond}
-    diam@{shape: diam, label: diam}
-    decision@{shape: decision, label: decision}
-    delay@{shape: delay, label: delay}
-    das@{shape: das, label: das}
-    disk@{shape: disk, label: disk}
-    document@{shape: document, label: document}
-    doc@{shape: doc, label: doc}
-    rounded@{shape: rounded, label: rounded}
-    event@{shape: event, label: event}
-    triangle@{shape: triangle, label: triangle}
-    tri@{shape: tri, label: tri}
-    extract@{shape: extract, label: extract}
-    fork@{shape: fork, label: fork}
-    join@{shape: join, label: join}
-    junction@{shape: junction, label: junction}
-    manual@{shape: manual, label: manual}
-    trapezoid@{shape: trapezoid, label: trapezoid}
-    docs@{shape: docs, label: docs}
-    documents@{shape: documents, label: documents}
-    processes@{shape: processes, label: processes}
-    odd@{shape: odd, label: odd}
-    flag@{shape: flag, label: flag}
-    hexagon@{shape: hexagon, label: hexagon}
-    hex@{shape: hex, label: hex}
-    priority@{shape: priority, label: priority}
-    rectangle@{shape: rectangle, label: rectangle}
-    rect@{shape: rect, label: rect}
-    proc@{shape: proc, label: proc}
-    circle@{shape: circle, label: circle}
-    circ@{shape: circ, label: circ}
-    stop@{shape: stop, label: stop}
-    subprocess@{shape: subprocess, label: subprocess}
-    summary@{shape: summary, label: summary}
-    stadium@{shape: stadium, label: stadium}
-    terminal@{shape: terminal, label: terminal}
-    pill@{shape: pill, label: pill}
-    text@{shape: text, label: text}
+flowchart LR
+    subgraph Rectangles
+        notchrect@{shape: notch-rect, label: "notch-rect"}
+        delay@{shape: delay, label: "delay"}
+        divrect@{shape: div-rect, label: "div-rect"}
+        rounded@{shape: rounded, label: "rounded"}
+        fork@{shape: fork, label: "fork"}
+        linrect@{shape: lin-rect, label: "lin-rect"}
+        strect@{shape: st-rect, label: "st-rect"}
+        rect@{shape: rect, label: "rect"}
+        bowrect@{shape: bow-rect, label: "bow-rect"}
+        frrect@{shape: fr-rect, label: "fr-rect"}
+        tagrect@{shape: tag-rect, label: "tag-rect"}
+        datastore@{shape: datastore, label: "datastore"}
+    end
+
+    subgraph Circles
+        fcirc@{shape: f-circ, label: "f-circ"}
+        circle@{shape: circle, label: "circle"}
+        smcirc@{shape: sm-circ, label: "sm-circ"}
+        dblcirc@{shape: dbl-circ, label: "dbl-circ"}
+        frcirc@{shape: fr-circ, label: "fr-circ"}
+        crosscirc@{shape: cross-circ, label: "cross-circ"}
+        stadium@{shape: stadium, label: "stadium"}
+        cyl@{shape: cyl, label: "cyl"}
+        hcyl@{shape: h-cyl, label: "h-cyl"}
+        lincyl@{shape: lin-cyl, label: "lin-cyl"}
+    end
+
+    subgraph Pointy
+        curvtrap@{shape: curv-trap, label: "curv-trap"}
+        trat@{shape: trap-t, label: "trap-t"}
+        trapb@{shape: trap-b, label: "trap-b"}
+        tri@{shape: tri, label: "tri"}
+        fliptri@{shape: flip-tri, label: "flip-tri"}
+        diam@{shape: diam, label: "diam"}
+        hourglass@{shape: hourglass, label: "hourglass"}
+        bolt@{shape: bolt, label: "bolt"}
+        leanr@{shape: lean-r, label: "lean-r"}
+        leanl@{shape: lean-l, label: "lean-l"}
+        slrect@{shape: sl-rect, label: "sl-rect"}
+    end
+    
+    subgraph Braces
+        brace@{shape: brace, label: "brace"}
+        bracer@{shape: brace-r, label: "brace-r"}
+        brac@{shape: braces, label: "braces"}
+    end
+    
+    subgraph Misc
+        bang@{shape: bang, label: "bang"}
+        cloud@{shape: cloud, label: "cloud"}
+        doc@{shape: doc, label: "doc"}
+        winpane@{shape: win-pane, label: "win-pane"}
+        lindoc@{shape: lin-doc, label: "lin-doc"}
+        notch-pent@{shape: notch-pent, label: "notch-pent"}
+        docs@{shape: docs, label: "docs"}
+        odd@{shape: odd, label: "odd"}
+        flag@{shape: flag, label: "flag"}
+        hex@{shape: hex, label: "hex"}
+        tag-doc@{shape: tag-doc, label: "tag-doc"}
+        text@{shape: text, label: "text"}
+    end
 ```
