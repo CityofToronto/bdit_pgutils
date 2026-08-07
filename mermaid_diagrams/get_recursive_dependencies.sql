@@ -1,6 +1,6 @@
---DROP FUNCTION IF EXISTS public.get_recursive_dependencies;
+--DROP FUNCTION IF EXISTS dbadmin.get_recursive_dependencies;
 
-CREATE OR REPLACE FUNCTION public.get_recursive_dependencies (
+CREATE OR REPLACE FUNCTION dbadmin.get_recursive_dependencies (
     input_obj text,
     recursive_direction text
 ) RETURNS TABLE(oid oid, obj_schema name, obj_name name) 
@@ -38,7 +38,7 @@ BEGIN
                     FROM
                         (
                             SELECT dep_oid, ref_schema, ref_name, dep_schema, dep_name
-                            FROM public.dependent_relations
+                            FROM dbadmin.dependent_relations
                         ) AS deps
                     JOIN recursive_deps ON
                         deps.ref_schema = recursive_deps.obj_schema
@@ -83,7 +83,7 @@ BEGIN
                     FROM
                         (
                             SELECT dep_oid, ref_schema, ref_name, dep_schema, dep_name
-                            FROM public.dependent_relations
+                            FROM dbadmin.dependent_relations
                         ) AS deps
                     JOIN recursive_deps ON
                         deps.dep_schema = recursive_deps.obj_schema
@@ -104,9 +104,9 @@ BEGIN
         ORDER BY max(depth) DESC;
     ELSEIF recursive_direction = 'both' THEN
         RETURN QUERY
-        SELECT * FROM public.get_recursive_dependencies(input_obj, 'down')
+        SELECT * FROM dbadmin.get_recursive_dependencies(input_obj, 'down')
         UNION
-        SELECT * FROM public.get_recursive_dependencies(input_obj, 'up');
+        SELECT * FROM dbadmin.get_recursive_dependencies(input_obj, 'up');
     END IF;
 
     END;
@@ -114,7 +114,7 @@ BEGIN
 $BODY$;
 
 /*Examples:
-SELECT public.get_recursive_dependencies('miovision_validation.valid_legs_view', 'down')
-SELECT public.get_recursive_dependencies('miovision_validation.valid_legs_view', 'up')
-SELECT public.get_recursive_dependencies('miovision_validation.valid_legs_view', 'both')
+SELECT dbadmin.get_recursive_dependencies('miovision_validation.valid_legs_view', 'down')
+SELECT dbadmin.get_recursive_dependencies('miovision_validation.valid_legs_view', 'up')
+SELECT dbadmin.get_recursive_dependencies('miovision_validation.valid_legs_view', 'both')
 */

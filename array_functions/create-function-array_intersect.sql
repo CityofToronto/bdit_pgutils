@@ -17,7 +17,7 @@ END;
 $BODY$
 LANGUAGE plpgsql IMMUTABLE;
 
-CREATE AGGREGATE public.array_intersect_agg(int[]) (
+CREATE OR REPLACE AGGREGATE public.array_intersect_agg(int[]) (
     SFUNC = array_intersect,
     STYPE = int[]
 );
@@ -28,3 +28,6 @@ SELECT public.array_intersect('{1,2}'::int[], '{2,3}'::int[])
 --example of aggregate function
 WITH test(vals) AS ((VALUES('{1,2}'::int[]), ('{2,3}'::int[]), ('{2,4}'::int[])))
 SELECT public.array_intersect_agg(vals) FROM test
+
+COMMENT ON FUNCTION public.array_intersect IS
+'Function to find the intersections of two arrays. See array_intersect_agg for aggregate function.';
