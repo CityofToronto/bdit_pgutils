@@ -1,8 +1,9 @@
-CREATE OR REPLACE FUNCTION public.deps_restore_dependencies(p_view_schema IN VARCHAR, p_view_name IN VARCHAR)
+CREATE OR REPLACE FUNCTION dbadmin.deps_restore_dependencies(p_view_schema IN VARCHAR, p_view_name IN VARCHAR)
 RETURNS VOID
 LANGUAGE plpgsql
     VOLATILE
     PARALLEL UNSAFE
+    SECURITY INVOKER
     COST 100
 AS
 $$
@@ -10,7 +11,7 @@ DECLARE v_curr record;
 BEGIN
 FOR v_curr IN (
     SELECT deps_ddl_to_run
-    FROM public.deps_saved_ddl
+    FROM dbadmin.deps_saved_ddl
     WHERE
         deps_view_schema = p_view_schema
         AND deps_view_name = p_view_name
@@ -20,7 +21,7 @@ FOR v_curr IN (
 EXECUTE v_curr.deps_ddl_to_run;
 END loop;
 
-DELETE FROM public.deps_saved_ddl
+DELETE FROM dbadmin.deps_saved_ddl
 WHERE
     deps_view_schema = p_view_schema
     AND deps_view_name = p_view_name;
@@ -28,4 +29,4 @@ WHERE
 END;
 $$;
 
-ALTER FUNCTION public.deps_restore_dependencies(VARCHAR, VARCHAR) OWNER TO dbadmin;
+ALTER FUNCTION dbadmin.deps_restore_dependencies(VARCHAR, VARCHAR) OWNER TO dbadmin;

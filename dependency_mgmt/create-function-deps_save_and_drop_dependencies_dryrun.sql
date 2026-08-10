@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.deps_save_and_drop_dependencies_dryrun(
+CREATE OR REPLACE FUNCTION dbadmin.deps_save_and_drop_dependencies_dryrun(
     p_view_schema IN VARCHAR,
     p_view_name IN VARCHAR,
     dryrun BOOLEAN default True,
@@ -8,6 +8,7 @@ RETURNS VOID
 LANGUAGE plpgsql
     VOLATILE
     PARALLEL UNSAFE
+    SECURITY INVOKER
     COST 100
 AS
 $$
@@ -15,7 +16,7 @@ DECLARE v_curr record;
 
 BEGIN
 
-DELETE FROM public.deps_saved_ddl
+DELETE FROM dbadmin.deps_saved_ddl
 WHERE
     deps_view_schema = p_view_schema
     AND deps_view_name = p_view_name;
@@ -75,7 +76,7 @@ FOR v_curr IN
 ) loop
 
 --save comments on dependencies
-INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+INSERT INTO dbadmin.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
 SELECT
     p_view_schema,
     p_view_name,
@@ -96,7 +97,7 @@ WHERE
     AND d.description is not null;
 
 --save comments on dependency columns
-INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+INSERT INTO dbadmin.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
 SELECT
     p_view_schema,
     p_view_name,
@@ -114,11 +115,11 @@ WHERE
     AND d.description IS NOT NULL;
 
 --save permissions on object
-INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+INSERT INTO dbadmin.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
 SELECT
     p_view_schema,
     p_view_name,
-    'GRANT ' || public.priviliges_from_acl(s[2])
+    'GRANT ' || dbadmin.priviliges_from_acl(s[2])
     || ' ON ' || nspname || '.' || relname || ' TO ' || 
     COALESCE(NULLIF(s[1], ''), 'public') || ';' AS deps_ddl_to_run
 FROM pg_class AS c
@@ -132,7 +133,7 @@ WHERE
 
 IF v_curr.obj_type = 'v' THEN
     --save view owners 
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    INSERT INTO dbadmin.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     SELECT
         p_view_schema,
         p_view_name,
@@ -143,7 +144,7 @@ IF v_curr.obj_type = 'v' THEN
         schemaname = v_curr.obj_schema
         AND viewname = v_curr.obj_name;
 
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    INSERT INTO dbadmin.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     --save view create statements
     SELECT
         p_view_schema,
@@ -158,7 +159,7 @@ IF v_curr.obj_type = 'v' THEN
 ELSIF v_curr.obj_type = 'm' THEN
 
     --save index/unique index: 
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    INSERT INTO dbadmin.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     SELECT
         p_view_schema,
         p_view_name,
@@ -169,7 +170,7 @@ ELSIF v_curr.obj_type = 'm' THEN
         AND tablename = v_curr.obj_name;
 
     --save mat view owner: 
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    INSERT INTO dbadmin.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     SELECT
         p_view_schema,
         p_view_name,
@@ -181,7 +182,7 @@ ELSIF v_curr.obj_type = 'm' THEN
         AND matviewname = v_curr.obj_name;
 
     --save mat view definition:
-    INSERT INTO public.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
+    INSERT INTO dbadmin.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to_run)
     SELECT
         p_view_schema,
         p_view_name,
@@ -202,19 +203,19 @@ IF dryrun IS FALSE THEN
     END || ' ' || v_curr.obj_schema || '.' || v_curr.obj_name || ';';
 END IF;
 
-RAISE NOTICE 'Completed adding to public.deps_saved_ddl for %.% time=%', v_curr.obj_schema, v_curr.obj_name, timeofday();
+RAISE NOTICE 'Completed adding to dbadmin.deps_saved_ddl for %.% time=%', v_curr.obj_schema, v_curr.obj_name, timeofday();
 
 END loop;
 
 END;
 $$;
 
-ALTER FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) OWNER TO dbadmin;
-GRANT EXECUTE ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) TO bdit_humans;
+ALTER FUNCTION dbadmin.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) OWNER TO dbadmin;
+GRANT EXECUTE ON FUNCTION dbadmin.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) TO bdit_humans;
 
-COMMENT ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) IS 
+COMMENT ON FUNCTION dbadmin.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) IS 
     '''This version of the function is meant for testing. Use with dryrun = True (default) if you want to check
-    the entries in `public.deps_saved_ddl` first before actually dropping the dependencies. 
+    the entries in `dbadmin.deps_saved_ddl` first before actually dropping the dependencies. 
     Use this function when you need to drop+edit+recreate a table or (mat) view with dependencies.
     This function will recursively iterate through an objects dependencies and save:
     - definition of view/mat view
@@ -226,14 +227,14 @@ COMMENT ON FUNCTION public.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCH
     - DOES NOT HANDLE TRIGGERS ON VIEWS
     - DROP the dependency (If dryrun = False)
     Then, after dropping, editing, and restoring the original object, use the function 
-    public.deps_restore_dependencies(VARCHAR, VARCHAR) to recreate the dependencies. 
+    dbadmin.deps_restore_dependencies(VARCHAR, VARCHAR) to recreate the dependencies. 
     `max_depth` parameter is used to prevent infinite recursion in cases where dependencies at one depth
     relative to the initial object reference each other. May need to test with dryrun=True and increment the max_depth
     to identify the required levels. Note that if this edge cases is true for your case, you may need to use dryrun = True and
     manually order/the drop/add statements to correct for self-referential definitions at the same level. 
 
     Example with dryrun = True;
-    SELECT public.deps_save_and_drop_dependencies_dryrun(''miovision_api''::text COLLATE pg_catalog."C", ''volumes_15min''::text COLLATE pg_catalog."C");
+    SELECT dbadmin.deps_save_and_drop_dependencies_dryrun(''miovision_api''::text COLLATE pg_catalog."C", ''volumes_15min''::text COLLATE pg_catalog."C");
     --examine the create statements: 
-    SELECT * FROM public.deps_saved_ddl WHERE deps_view_schema = ''miovision_api'' AND deps_view_name = ''volumes_15min'' ORDER BY deps_id;
+    SELECT * FROM dbadmin.deps_saved_ddl WHERE deps_view_schema = ''miovision_api'' AND deps_view_name = ''volumes_15min'' ORDER BY deps_id;
     '''
