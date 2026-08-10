@@ -1,6 +1,6 @@
--- FUNCTION: gis.clip_totext, text
+-- FUNCTION: gis.clip_to(text, text)
 
--- DROP FUNCTION gis.clip_totext, text;
+-- DROP FUNCTION gis.clip_to(text, text);
 /*Author: Raphael Dumas
 Clips the specified layer in the specified schema to the Toronto boundary*/
 CREATE OR REPLACE FUNCTION gis.clip_to(
@@ -14,7 +14,7 @@ AS $function$
 
 BEGIN
 DROP TABLE IF EXISTS bounded_table;
-EXECUTE FORMAT('CREATE TEMP TABLE bounded_table AS SELECT a.*  FROM %I.%I AS a, gis."to" AS b WHERE ST_Intersects(a.geom, b.geom)', schemaname, tablename);
+EXECUTE FORMAT('CREATE TEMP TABLE bounded_table AS SELECT a.*  FROM %I.%I AS a, gis.toronto_boundary AS b WHERE ST_Intersects(a.geom, b.geom)', schemaname, tablename);
 EXECUTE FORMAT('TRUNCATE %I.%I', schemaname, tablename);
 EXECUTE FORMAT('INSERT INTO %I.%I SELECT * FROM bounded_table',  schemaname, tablename);
 RETURN 1;
