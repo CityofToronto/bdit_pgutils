@@ -30,3 +30,5 @@ END;
 $$;
 
 ALTER FUNCTION dbadmin.deps_restore_dependencies(VARCHAR, VARCHAR) OWNER TO dbadmin;
+
+GRANT EXECUTE ON FUNCTION dbadmin.deps_restore_dependencies(VARCHAR, VARCHAR) TO bdit_humans;
