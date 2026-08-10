@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.priviliges_from_acl(TEXT)
+CREATE OR REPLACE FUNCTION public.privileges_from_acl(TEXT)
 RETURNS TEXT
 LANGUAGE SQL AS $$
     SELECT string_agg(privilege, ', ')
@@ -17,5 +17,5 @@ LANGUAGE SQL AS $$
     ) AS s 
 $$;
 
-ALTER FUNCTION public.priviliges_from_acl(TEXT) OWNER TO dbadmin;
-GRANT EXECUTE ON FUNCTION public.priviliges_from_acl(TEXT) TO bdit_humans;
+ALTER FUNCTION public.privileges_from_acl(TEXT) OWNER TO dbadmin;
+GRANT EXECUTE ON FUNCTION public.privileges_from_acl(TEXT) TO bdit_humans;
