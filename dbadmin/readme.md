@@ -3,7 +3,7 @@
   - [view-functions.sql](#view-functionssql)
   - [view-tables\_and\_views.sql](#view-tables_and_viewssql)
   - [view-schemas.sql](#view-schemassql)
-  - [create-function-priviliges\_from\_acl.sql](#create-function-priviliges_from_aclsql)
+  - [create-function-privileges\_from\_acl.sql](#create-function-privileges_from_aclsql)
 
 # Overview
 These basic views are meant to be the building blocks of other dbadmin queries, and to make it easy to conduct purges.
@@ -22,5 +22,5 @@ A filtered view of `dbadmin.all_objects` which only includes non-functions (`pg_
 ## [view-schemas.sql](view-schemas.sql)
 A view of schemas, useful to identify chonkers for purge.
 
-## [create-function-priviliges_from_acl.sql](create-function-priviliges_from_acl.sql)
+## [create-function-privileges_from_acl.sql](create-function-privileges_from_acl.sql)
 Misc helper function used in [deps_save_and_drop_dependencies_dryrun](../dependency_mgmt/create-function-deps_save_and_drop_dependencies_dryrun.sql).
