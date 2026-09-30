@@ -77,8 +77,17 @@ ORDER BY
     obj_type,
     obj_name;
 
-ALTER VIEW dbadmin.all_objects OWNER TO dbadmin;
-GRANT SELECT ON TABLE dbadmin.all_objects TO bdit_humans;
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER VIEW dbadmin.all_objects OWNER TO dbadmin;
+    GRANT SELECT ON TABLE dbadmin.all_objects TO bdit_humans;
+ELSIF current_database() = 'ptc' THEN
+    ALTER VIEW dbadmin.all_objects OWNER TO postgres;
+    GRANT SELECT ON TABLE dbadmin.all_objects TO ptc_humans;
+END IF;
+END
+$$;
 
 COMMENT ON VIEW dbadmin.all_objects
 IS 'A view of all database objects, useful for purge.';

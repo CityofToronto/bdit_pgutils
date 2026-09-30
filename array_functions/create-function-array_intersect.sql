@@ -23,11 +23,23 @@ CREATE OR REPLACE AGGREGATE public.array_intersect_agg(int[]) (
 );
 
 --example of function
-SELECT public.array_intersect('{1,2}'::int[], '{2,3}'::int[])
+SELECT public.array_intersect('{1,2}'::int[], '{2,3}'::int[]);
 
 --example of aggregate function
 WITH test(vals) AS ((VALUES('{1,2}'::int[]), ('{2,3}'::int[]), ('{2,4}'::int[])))
-SELECT public.array_intersect_agg(vals) FROM test
+SELECT public.array_intersect_agg(vals) FROM test;
 
 COMMENT ON FUNCTION public.array_intersect IS
 'Function to find the intersections of two arrays. See array_intersect_agg for aggregate function.';
+
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER FUNCTION public.array_intersect OWNER TO dbadmin;
+ELSIF current_database() = 'ptc' THEN
+    ALTER FUNCTION public.array_intersect OWNER TO postgres;
+END IF;
+END
+$$;
+
+GRANT EXECUTE ON FUNCTION public.array_intersect TO public;

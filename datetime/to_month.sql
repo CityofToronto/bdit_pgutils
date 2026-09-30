@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION public.to_month(
-	date_val DATE)
+    date_val DATE)
     RETURNS TEXT
     LANGUAGE 'sql'
 
@@ -8,9 +8,15 @@ CREATE OR REPLACE FUNCTION public.to_month(
 AS $BODY$
 
 SELECT to_char(date_trunc('month', date_val)::DATE, 
-			   'YYYY-MM');
+               'YYYY-MM');
 $BODY$;
 
-ALTER FUNCTION public.to_month(DATE)
-    OWNER TO rdumas;
-
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER FUNCTION public.to_month(date) OWNER TO dbadmin;
+ELSIF current_database() = 'ptc' THEN
+    ALTER FUNCTION public.to_month(date) OWNER TO postgres;
+END IF;
+END
+$$;

@@ -4,8 +4,8 @@
 /*Author: Raphael Dumas
 Clips the specified layer in the specified schema to the Toronto boundary*/
 CREATE OR REPLACE FUNCTION gis.clip_to(
-	schemaname text,
-	tablename text)
+    schemaname text,
+    tablename text)
     RETURNS integer
     LANGUAGE 'plpgsql'
     COST 100.0
@@ -22,10 +22,16 @@ END;
 
 $function$;
 
-ALTER FUNCTION gis.clip_to(text, text)
-    OWNER TO dbadmin;
-
-GRANT EXECUTE ON FUNCTION gis.clip_to(text, text) TO bdit_humans;
-
-GRANT EXECUTE ON FUNCTION gis.clip_to(text, text) TO dbadmin;
-
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER FUNCTION gis.clip_to(text, text) OWNER TO dbadmin;
+    GRANT EXECUTE ON FUNCTION gis.clip_to(text, text) TO dbadmin;
+    GRANT EXECUTE ON FUNCTION gis.clip_to(text, text) TO bdit_humans;
+ELSIF current_database() = 'ptc' THEN
+    ALTER FUNCTION gis.clip_to(text, text) OWNER TO postgres;
+    GRANT EXECUTE ON FUNCTION gis.clip_to(text, text) TO postgres;
+    GRANT EXECUTE ON FUNCTION gis.clip_to(text, text) TO ptc_humans;
+END IF;
+END
+$$;

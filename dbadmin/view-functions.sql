@@ -12,9 +12,17 @@ FROM
 WHERE
     obj_type IN ('WINDOW FUNCTION', 'FUNCTION', 'AGGREGATE FUNCTION', 'PROCEDURE');
 
-ALTER VIEW dbadmin.functions owner TO dbadmin;
-
-GRANT SELECT ON TABLE dbadmin.functions TO bdit_humans;
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER VIEW dbadmin.functions OWNER TO dbadmin;
+    GRANT SELECT ON TABLE dbadmin.functions TO bdit_humans;
+ELSIF current_database() = 'ptc' THEN
+    ALTER VIEW dbadmin.functions OWNER TO postgres;
+    GRANT SELECT ON TABLE dbadmin.functions TO ptc_humans;
+END IF;
+END
+$$;
 
 COMMENT ON VIEW dbadmin.functions
 IS 'A view of database objects filtered to only functions and procedures.';

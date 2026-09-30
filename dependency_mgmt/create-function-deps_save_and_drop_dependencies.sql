@@ -14,8 +14,17 @@ SELECT dbadmin.deps_save_and_drop_dependencies_dryrun(
 );
 $$;
 
-ALTER FUNCTION dbadmin.deps_save_and_drop_dependencies(VARCHAR, VARCHAR, INTEGER) OWNER TO dbadmin;
-GRANT EXECUTE ON FUNCTION dbadmin.deps_save_and_drop_dependencies(VARCHAR, VARCHAR, INTEGER) TO dbadmin;
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER FUNCTION dbadmin.deps_save_and_drop_dependencies(VARCHAR, VARCHAR, INTEGER) OWNER TO dbadmin;
+    GRANT EXECUTE ON FUNCTION dbadmin.deps_save_and_drop_dependencies(VARCHAR, VARCHAR, INTEGER) TO dbadmin;
+ELSIF current_database() = 'ptc' THEN
+    ALTER FUNCTION dbadmin.deps_save_and_drop_dependencies(VARCHAR, VARCHAR, INTEGER) OWNER TO postgres;
+    GRANT EXECUTE ON FUNCTION dbadmin.deps_save_and_drop_dependencies(VARCHAR, VARCHAR, INTEGER) TO postgres;
+END IF;
+END
+$$;
 
 COMMENT ON FUNCTION dbadmin.deps_save_and_drop_dependencies(VARCHAR, VARCHAR, INTEGER) IS 
     '''This version is only to be used by admins. It drops all dependencies of the inputed object. 

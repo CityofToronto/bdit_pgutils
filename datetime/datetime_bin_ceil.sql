@@ -14,4 +14,12 @@ AS $BODY$
 
 $BODY$;
 
-ALTER FUNCTION public.datetime_bin_ceil(timestamp without time zone, integer) OWNER TO dbadmin;
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER FUNCTION public.datetime_bin_ceil(timestamp without time zone, integer) OWNER TO dbadmin;
+ELSIF current_database() = 'ptc' THEN
+    ALTER FUNCTION public.datetime_bin_ceil(timestamp without time zone, integer) OWNER TO postgres;
+END IF;
+END
+$$;

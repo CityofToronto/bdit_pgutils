@@ -134,15 +134,19 @@ BEGIN
 END;
 $BODY$;
 
-ALTER FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean)
-OWNER TO dbadmin;
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean) OWNER TO dbadmin;
+    GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean) TO dbadmin;
+    GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean) TO bdit_humans;
+ELSIF current_database() = 'ptc' THEN
+    ALTER FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean) OWNER TO postgres;
+    GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean) TO postgres;
+    GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean) TO ptc_humans;
+END IF;
 
-GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean) TO PUBLIC;
-
-GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean) TO bdit_humans;
-
-GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean) TO dbadmin;
-
+GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text, text, boolean) TO public;
 
 --an overloaded version with some defaults specified
 CREATE OR REPLACE FUNCTION dbadmin.mermaid_dependency_diagram (
@@ -160,11 +164,16 @@ SELECT dbadmin.mermaid_dependency_diagram(
 );
 $BODY$;
 
-ALTER FUNCTION dbadmin.mermaid_dependency_diagram(text)
-    OWNER TO dbadmin;
+IF current_database() = 'bigdata' THEN
+    ALTER FUNCTION dbadmin.mermaid_dependency_diagram(text) OWNER TO dbadmin;
+    GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text) TO dbadmin;
+    GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text) TO bdit_humans;
+ELSIF current_database() = 'ptc' THEN
+    ALTER FUNCTION dbadmin.mermaid_dependency_diagram(text) OWNER TO postgres;
+    GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text) TO postgres;
+    GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text) TO ptc_humans;
+END IF;
+END
+$$;
 
-GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text) TO PUBLIC;
-
-GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text) TO bdit_humans;
-
-GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text) TO dbadmin;
+GRANT EXECUTE ON FUNCTION dbadmin.mermaid_dependency_diagram(text) TO public;

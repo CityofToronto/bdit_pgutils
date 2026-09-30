@@ -1,12 +1,20 @@
-CREATE TYPE gis.gid_geom AS (
+DO 'BEGIN
+   CREATE TYPE gis.gid_geom AS (
     gid TEXT,
     the_geom geometry);
-    
-CREATE TYPE gis.clustered_geom AS (
+EXCEPTION WHEN duplicate_object THEN
+   NULL;  -- ignore the error
+END;';
+
+DO 'BEGIN
+   CREATE TYPE gis.clustered_geom AS (
     gid TEXT,
     the_geom geometry,
     cluster_id int);
-	
+EXCEPTION WHEN duplicate_object THEN
+   NULL;  -- ignore the error
+END;';
+
 CREATE OR REPLACE FUNCTION gis.cluster_within(_geoms gis.gid_geom[], _radius integer)
 RETURNS SETOF gis.clustered_geom AS
 $BODY$
@@ -96,23 +104,23 @@ LOOP
             ORDER BY cluster_id, repeat_flag DESC
             ) f
         WHERE o.cluster_id = ANY (joined_clusters) AND repeat_flag =0
-	RETURNING 1)
+    RETURNING 1)
     --Store number of rows updated into a variable
     SELECT COALESCE(COUNT(*), 0) INTO updated_rows FROM upd;
 
     if mod(counter, 10) = 0 THEN
-		RAISE NOTICE USING MESSAGE = clock_timestamp()::TEXT||$$: Number of passes $$||counter||$$, number of clusters updated: $$|| updated_rows;
-	END if;
+        RAISE NOTICE USING MESSAGE = clock_timestamp()::TEXT||$$: Number of passes $$||counter||$$, number of clusters updated: $$|| updated_rows;
+    END if;
 
     --If there's only one cluster left or no more rows can be updated, exit the loop.
     IF (SELECT COUNT(DISTINCT cluster_id) FROM clusters) < 2 OR updated_rows = 0 THEN
         EXIT;                           
     END IF;
-	
-	if counter >= 100000  THEN
-		RAISE NOTICE USING MESSAGE = $$100,000 passes reached, exiting$$;
-		EXIT;
-	END if;
+    
+    if counter >= 100000  THEN
+        RAISE NOTICE USING MESSAGE = $$100,000 passes reached, exiting$$;
+        EXIT;
+    END if;
 
 END LOOP;
 
@@ -124,9 +132,17 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    GRANT EXECUTE ON FUNCTION gis.cluster_within(gis.gid_geom[], integer) TO bdit_humans;
+ELSIF current_database() = 'ptc' THEN
+    GRANT EXECUTE ON FUNCTION gis.cluster_within(gis.gid_geom[], integer) TO ptc_humans;
+END IF;
+END
+$$;
 
-GRANT EXECUTE ON FUNCTION gis.cluster_within(gis.gid_geom[],  integer) TO bdit_humans;
-COMMENT ON FUNCTION gis.cluster_within(gis.gid_geom[],  integer) IS 
+COMMENT ON FUNCTION gis.cluster_within(gis.gid_geom[], integer) IS 
 $$Bottom up hierarchical clustering function that clusters geometries based on a maximum distance of _radius.
 usage:
 WITH subq AS(

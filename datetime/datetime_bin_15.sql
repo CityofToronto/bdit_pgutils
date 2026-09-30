@@ -3,7 +3,7 @@
 -- DROP FUNCTION public.datetime_bin_15(timestamp without time zone);
 
 CREATE OR REPLACE FUNCTION public.datetime_bin_15(
-	timestamp_val timestamp without time zone)
+    timestamp_val timestamp without time zone)
     RETURNS timestamp without time zone
     LANGUAGE 'sql'
 
@@ -11,9 +11,16 @@ CREATE OR REPLACE FUNCTION public.datetime_bin_15(
     IMMUTABLE 
 AS $BODY$
 
-	SELECT TIMESTAMP WITHOUT TIME ZONE 'epoch' + INTERVAL '1 second' * (floor((extract('epoch' from timestamp_val)) / 900) * 900);
+    SELECT TIMESTAMP WITHOUT TIME ZONE 'epoch' + INTERVAL '1 second' * (floor((extract('epoch' from timestamp_val)) / 900) * 900);
 
 $BODY$;
 
-ALTER FUNCTION public.datetime_bin_15(timestamp without time zone)
-    OWNER TO rdumas;
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER FUNCTION public.datetime_bin_15(timestamp without time zone) OWNER TO dbadmin;
+ELSIF current_database() = 'ptc' THEN
+    ALTER FUNCTION public.datetime_bin_15(timestamp without time zone) OWNER TO postgres;
+END IF;
+END
+$$;

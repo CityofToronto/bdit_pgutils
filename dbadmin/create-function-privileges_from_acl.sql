@@ -17,5 +17,14 @@ LANGUAGE SQL AS $$
     ) AS s 
 $$;
 
-ALTER FUNCTION public.privileges_from_acl(TEXT) OWNER TO dbadmin;
-GRANT EXECUTE ON FUNCTION public.privileges_from_acl(TEXT) TO bdit_humans;
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER FUNCTION public.privileges_from_acl(TEXT) OWNER TO dbadmin;
+    GRANT EXECUTE ON FUNCTION public.privileges_from_acl(TEXT) TO bdit_humans;
+ELSIF current_database() = 'ptc' THEN
+    ALTER FUNCTION public.privileges_from_acl(TEXT) OWNER TO postgres;
+    GRANT EXECUTE ON FUNCTION public.privileges_from_acl(TEXT) TO ptc_humans;
+END IF;
+END
+$$;

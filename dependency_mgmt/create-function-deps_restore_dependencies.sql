@@ -29,6 +29,14 @@ WHERE
 END;
 $$;
 
-ALTER FUNCTION dbadmin.deps_restore_dependencies(VARCHAR, VARCHAR) OWNER TO dbadmin;
-
-GRANT EXECUTE ON FUNCTION dbadmin.deps_restore_dependencies(VARCHAR, VARCHAR) TO bdit_humans;
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER FUNCTION dbadmin.deps_restore_dependencies(VARCHAR, VARCHAR) OWNER TO dbadmin;
+    GRANT EXECUTE ON FUNCTION dbadmin.deps_restore_dependencies(VARCHAR, VARCHAR) TO bdit_humans;
+ELSIF current_database() = 'ptc' THEN
+    ALTER FUNCTION dbadmin.deps_restore_dependencies(VARCHAR, VARCHAR) OWNER TO postgres;
+    GRANT EXECUTE ON FUNCTION dbadmin.deps_restore_dependencies(VARCHAR, VARCHAR) TO ptc_humans;
+END IF;
+END
+$$;

@@ -70,3 +70,17 @@ CREATE OR REPLACE VIEW dbadmin.dependent_relations AS (
     JOIN pg_namespace AS dep_nsp
         ON dep_cl.relnamespace = dep_nsp.oid
 );
+
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER TABLE IF EXISTS dbadmin.deps_saved_ddl OWNER TO dbadmin;
+    GRANT ALL ON TABLE dbadmin.deps_saved_ddl TO dbadmin;
+    GRANT ALL ON TABLE dbadmin.deps_saved_ddl TO bdit_humans;
+ELSIF current_database() = 'ptc' THEN
+    ALTER TABLE IF EXISTS dbadmin.deps_saved_ddl OWNER TO postgres;
+    GRANT ALL ON TABLE dbadmin.deps_saved_ddl TO postgres;
+    GRANT ALL ON TABLE dbadmin.deps_saved_ddl TO ptc_humans;
+END IF;
+END
+$$;

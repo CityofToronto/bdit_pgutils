@@ -1,21 +1,31 @@
--- FUNCTION: ref.is_weekend_or_holiday(date)
--- DROP FUNCTION IF EXISTS ref.is_weekend_or_holiday(date);
+--there is no ref.holiday on ptc databases
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
 
-CREATE OR REPLACE FUNCTION ref.is_weekend_or_holiday(
-    _dt date
-)
-RETURNS boolean
-LANGUAGE 'sql'
-COST 100
-STABLE PARALLEL SAFE 
+    -- FUNCTION: ref.is_weekend_or_holiday(date)
+    -- DROP FUNCTION IF EXISTS ref.is_weekend_or_holiday(date);
 
-RETURN (
-  (date_part('isodow'::text, _dt) >= (6)::double precision) --saturday or sunday
-  OR (
-    --holiday day
-    (SELECT hol.holiday FROM ref.holiday hol WHERE (hol.dt = is_weekend_or_holiday._dt)) IS NOT NULL
-  )
-);
+    CREATE OR REPLACE FUNCTION ref.is_weekend_or_holiday(
+        _dt date
+    )
+    RETURNS boolean
+    LANGUAGE 'sql'
+    COST 100
+    STABLE PARALLEL SAFE 
 
-ALTER FUNCTION ref.is_weekend_or_holiday(date) OWNER TO dbadmin;
-GRANT EXECUTE ON FUNCTION ref.is_weekend_or_holiday(date) TO bdit_humans;
+    RETURN (
+      (date_part('isodow'::text, _dt) >= (6)::double precision) --saturday or sunday
+      OR (
+        --holiday day
+        (SELECT hol.holiday FROM ref.holiday hol WHERE (hol.dt = is_weekend_or_holiday._dt)) IS NOT NULL
+      )
+    );
+
+    ALTER FUNCTION ref.is_weekend_or_holiday(date) OWNER TO dbadmin;
+
+    GRANT EXECUTE ON FUNCTION ref.is_weekend_or_holiday(date) TO bdit_humans;
+
+END IF;
+END
+$$;
