@@ -17,8 +17,17 @@ FROM
 WHERE
     obj_type IN ('TABLE', 'VIEW', 'MATERIALIZED VIEW');
 
-ALTER VIEW dbadmin.tables_and_views owner TO dbadmin;
-GRANT SELECT ON TABLE dbadmin.tables_and_views TO bdit_humans;
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER VIEW dbadmin.tables_and_views OWNER TO dbadmin;
+    GRANT SELECT ON TABLE dbadmin.tables_and_views TO bdit_humans;
+ELSIF current_database() = 'ptc' THEN
+    ALTER VIEW dbadmin.tables_and_views OWNER TO postgres;
+    GRANT SELECT ON TABLE dbadmin.tables_and_views TO ptc_humans;
+END IF;
+END
+$$;
 
 COMMENT ON VIEW dbadmin.tables_and_views
 IS 'A view of database objects filtered to only tables, views and materialized view.';

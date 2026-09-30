@@ -15,8 +15,17 @@ GROUP BY
 ORDER BY
     schema_name;
 
-ALTER VIEW dbadmin.schemas OWNER TO dbadmin;
-GRANT SELECT ON TABLE dbadmin.schemas TO bdit_humans;
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER VIEW dbadmin.schemas OWNER TO dbadmin;
+    GRANT SELECT ON TABLE dbadmin.schemas TO bdit_humans;
+ELSIF current_database() = 'ptc' THEN
+    ALTER VIEW dbadmin.schemas OWNER TO postgres;
+    GRANT SELECT ON TABLE dbadmin.schemas TO ptc_humans;
+END IF;
+END
+$$;
 
 COMMENT ON VIEW dbadmin.schemas
 IS 'A view of database schemas, useful for purge.';

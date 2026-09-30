@@ -6,10 +6,10 @@ First time here? Try running with dryrun := True first and look at the results t
 ```sql
 --run dry run = true and check results 
 SELECT dbadmin.deps_save_and_drop_dependencies_dryrun(
-	p_view_schema:= 'vds'::character varying COLLATE "C",
-	p_view_name:= 'detector_inventory'::character varying COLLATE "C", 
-	dryrun := True::boolean, 
-	max_depth := 20::integer
+    p_view_schema:= 'vds'::character varying COLLATE "C",
+    p_view_name:= 'detector_inventory'::character varying COLLATE "C", 
+    dryrun := True::boolean, 
+    max_depth := 20::integer
 );
 
 --check out dry run results and save elsewhere.
@@ -27,9 +27,9 @@ Now the real deal. Run the non-dryrun version to drop dependencies. I prefer to 
 ```sql
 --when comfortable, run with dryrun = False
 SELECT dbadmin.deps_save_and_drop_dependencies(
-	p_view_schema:= 'vds'::character varying COLLATE "C",
-	p_view_name:= 'volumes_daily'::character varying COLLATE "C", 
-	max_depth := 20::integer
+    p_view_schema:= 'vds'::character varying COLLATE "C",
+    p_view_name:= 'volumes_daily'::character varying COLLATE "C", 
+    max_depth := 20::integer
 );
 
 /*##########################################
@@ -41,8 +41,8 @@ drop and recreate the object with dependencies
 
 --now restore dependencies:
 SELECT dbadmin.deps_restore_dependencies(
-	p_view_schema:= 'vds'::character varying COLLATE "C",
-	p_view_name:= 'volumes_daily'::character varying COLLATE "C"
+    p_view_schema:= 'vds'::character varying COLLATE "C",
+    p_view_name:= 'volumes_daily'::character varying COLLATE "C"
 );
 ```
 

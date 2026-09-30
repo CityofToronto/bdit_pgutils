@@ -210,8 +210,17 @@ END loop;
 END;
 $$;
 
-ALTER FUNCTION dbadmin.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) OWNER TO dbadmin;
-GRANT EXECUTE ON FUNCTION dbadmin.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) TO bdit_humans;
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER FUNCTION dbadmin.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) OWNER TO dbadmin;
+    GRANT EXECUTE ON FUNCTION dbadmin.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) TO bdit_humans;
+ELSIF current_database() = 'ptc' THEN
+    GRANT EXECUTE ON FUNCTION dbadmin.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) TO ptc_humans;
+    ALTER FUNCTION dbadmin.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) OWNER TO postgres;
+END IF;
+END
+$$;
 
 COMMENT ON FUNCTION dbadmin.deps_save_and_drop_dependencies_dryrun(VARCHAR, VARCHAR, BOOLEAN, INTEGER) IS 
     '''This version of the function is meant for testing. Use with dryrun = True (default) if you want to check

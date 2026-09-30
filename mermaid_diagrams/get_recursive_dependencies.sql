@@ -118,3 +118,18 @@ SELECT dbadmin.get_recursive_dependencies('miovision_validation.valid_legs_view'
 SELECT dbadmin.get_recursive_dependencies('miovision_validation.valid_legs_view', 'up')
 SELECT dbadmin.get_recursive_dependencies('miovision_validation.valid_legs_view', 'both')
 */
+
+DO $$
+BEGIN
+
+IF current_database() = 'bigdata' THEN
+    ALTER TABLE IF EXISTS dbadmin.deps_saved_ddl OWNER TO dbadmin;
+    GRANT ALL ON TABLE dbadmin.deps_saved_ddl TO dbadmin;
+    GRANT ALL ON TABLE dbadmin.deps_saved_ddl TO bdit_humans;
+ELSIF current_database() = 'ptc' THEN
+    ALTER TABLE IF EXISTS dbadmin.deps_saved_ddl OWNER TO postgres;
+    GRANT ALL ON TABLE dbadmin.deps_saved_ddl TO postgres;
+    GRANT ALL ON TABLE dbadmin.deps_saved_ddl TO ptc_humans;
+END IF;
+END
+$$;

@@ -23,10 +23,18 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION public.array_diff OWNER TO dbadmin;
+DO $$
+BEGIN
+IF current_database() = 'bigdata' THEN
+    ALTER FUNCTION public.array_diff OWNER TO dbadmin;
+ELSIF current_database() = 'ptc' THEN
+    ALTER FUNCTION public.array_diff OWNER TO postgres;
+END IF;
+END
+$$;
 
 GRANT EXECUTE ON FUNCTION public.array_diff TO public;
 
 COMMENT ON FUNCTION public.array_diff IS 'Remove elements in Array2 from Array1.
 Source: https://stackoverflow.com/questions/55304197/array-difference-in-postgresql
-Example: SELECT array_diff(''{2,3,4}''::int[],	''{4,2}''::int[])';
+Example: SELECT array_diff(''{2,3,4}''::int[], ''{4,2}''::int[])';
