@@ -119,7 +119,7 @@ INSERT INTO dbadmin.deps_saved_ddl(deps_view_schema, deps_view_name, deps_ddl_to
 SELECT
     p_view_schema,
     p_view_name,
-    'GRANT ' || dbadmin.priviliges_from_acl(s[2])
+    'GRANT ' || dbadmin.privileges_from_acl(s[2])
     || ' ON ' || nspname || '.' || relname || ' TO ' || 
     COALESCE(NULLIF(s[1], ''), 'public') || ';' AS deps_ddl_to_run
 FROM pg_class AS c
